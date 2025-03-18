@@ -3,35 +3,100 @@
 #[macro_use]
 extern crate napi_derive;
 
-use lightningcss::stylesheet::{ParserOptions, PrinterOptions, StyleSheet, MinifyOptions};
+use lightningcss::{
+  selector::{Component, Selector},
+  stylesheet::{MinifyOptions, ParserOptions, PrinterOptions, StyleSheet},
+  targets::Browsers,
+  values::length::LengthValue,
+  visit_types,
+  visitor::{Visit, VisitTypes, Visitor},
+};
+use std::convert::Infallible;
+use std::string::String;
+
+struct MyVisitor;
+
+impl<'i> Visitor<'i> for MyVisitor {
+  type Error = Infallible;
+
+  fn visit_types(&self) -> VisitTypes {
+    visit_types!(URLS | LENGTHS)
+  }
+
+  fn visit_length(&mut self, length: &mut LengthValue) -> Result<(), Self::Error> {
+    match length {
+      LengthValue::Px(px) => *length = LengthValue::Px(*px * 2.0),
+      _ => {}
+    }
+    Ok(())
+  }
+
+  fn visit_selector(&mut self, selector: &mut Selector<'i>) -> Result<(), Self::Error> {
+    // 修改 selector 的样式名, 添加一个前缀
+    println!("selector: {:?}", selector.len());
+    for component in &mut selector.iter_raw_match_order() {
+      match component {
+        Component::Class(class) => {
+          println!("class: {:?}", class);
+          // *class = format!("prefix-{}", class).into();
+        }
+        _ => {
+          println!("component: {:?}", component);
+        }
+      }
+    }
+
+    // .for_each(|component| match component {
+    //   Component::Class(class) => {
+    //     println!("class: {:?}", class);
+    //     *class = format!("prefix-{}", class).into();
+    //   }
+    //   _ => {}
+    // });
+
+    // selector.append(Component::Class("prefix".into()));
+    Ok(())
+  }
+}
 
 #[napi]
 pub fn style_factory(css: String) -> String {
-    // 1. 解析CSS
-    let mut stylesheet = StyleSheet::parse(&css, ParserOptions::default()).unwrap();
-    
-    // 2. 执行压缩（原地修改）
-    stylesheet.minify(MinifyOptions::default()).unwrap();
-    
-    // 3. 生成压缩后的CSS代码
-    let printer_options = PrinterOptions {
-      minify: true,
-      ..Default::default()
+  let mut stylesheet = StyleSheet::parse(&css, ParserOptions::default()).unwrap();
+
+  let targets = Browsers {
+    safari: Some(11),
+    ios_saf: Some(11),
+    android: Some(6),
+    chrome: Some(55),
+    ..Browsers::default()
   };
-    let res = stylesheet.to_css(printer_options).unwrap();
-    
-    // 4.返回压缩后的CSS代码
-    (res.code).to_string()
+  let minify_options = MinifyOptions {
+    targets: targets.into(),
+    ..Default::default()
+  };
+
+  stylesheet.minify(minify_options).unwrap();
+
+  let printer_options = PrinterOptions {
+    minify: true,
+    ..Default::default()
+  };
+
+  stylesheet.visit(&mut MyVisitor).unwrap();
+
+  let res = stylesheet.to_css(printer_options).unwrap();
+
+  (res.code).to_string()
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+  use super::*;
 
-    #[test]
-    fn test_style_factory_basic() {
-        let input = "body { color: #ffffff;     }".to_string();
-        let expected = "body{color:#fff}";
-        assert_eq!(style_factory(input), expected);
-    }
+  #[test]
+  fn test_style_factory_basic() {
+    let input = ".body .h1{ color: #ffffff; height: 10px;     }".to_string();
+    let expected = ".body .h1{color:#fff;height:20px}".to_string();
+    assert_eq!(style_factory(input), expected);
+  }
 }
