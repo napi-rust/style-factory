@@ -1,0 +1,16 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Watch Tests with Output",
+      "type": "shell",
+      "command": "cargo watch -x 'test -- --show-output'",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": "$rustc"
+    }
+  ]
+}

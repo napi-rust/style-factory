@@ -4,5 +4,5 @@ import { styleFactory } from '../index.js'
 
 test('styleFactory', (t) => {
   const css = styleFactory(`body { color: red; }`)
-  t.is(css, 3)
+  t.is(css, 'body{color:red}')
 })
