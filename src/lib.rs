@@ -4,6 +4,16 @@
 extern crate napi_derive;
 
 #[napi]
-pub fn sum(a: i32, b: i32) -> i32 {
-  a + b
+pub fn style_factory(css: String) -> String {
+  css
+}
+
+#[cfg(test)]
+mod tests {
+  use super::style_factory;
+
+  #[test]
+  fn test_style_factory() {
+    assert_eq!(style_factory("body { color: red; }".to_string()), "body { color: red; }");
+  }
 }
