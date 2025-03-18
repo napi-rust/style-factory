@@ -1,8 +1,8 @@
 import test from 'ava'
 
-import { sum } from '../index.js'
+import { styleFactory } from '../index.js'
 
-test('sum from native', (t) => {
-  const ab = sum(1, 2);
-  t.is(ab, 3)
+test('styleFactory', (t) => {
+  const css = styleFactory(`body { color: red; }`)
+  t.is(css, 3)
 })
