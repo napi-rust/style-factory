@@ -14,7 +14,10 @@ use lightningcss::{
   visit_types,
   visitor::{Visit, VisitTypes, Visitor},
 };
-use parcel_selectors::attr::{AttrSelectorOperator, ParsedCaseSensitivity};
+use parcel_selectors::{
+  attr::{AttrSelectorOperator, ParsedCaseSensitivity},
+  parser::LocalName,
+};
 use std::convert::Infallible;
 use std::string::String;
 
@@ -61,12 +64,21 @@ impl<'i> Visitor<'i> for MyVisitor {
     // 修改 selector 的样式名, 添加一个 __PREFIX__ 前缀
     for component in &mut selector.iter_mut_raw_match_order() {
       match component {
+        // 将类名替换成 __PREFIX__ 类名
         Component::Class(class) => {
           *class = format!("__PREFIX__{}", class).into();
         }
-        Component::LocalName(local_name) => {
-          // 将标签替换成 attribute 属性选择符  div => [meta:tag="div"]
 
+        // 处理 * 选择器 * => unsupport-star
+        Component::ExplicitUniversalType => {
+          *component = Component::LocalName(LocalName {
+            name: "unsupport-star".into(),
+            lower_name: "unsupport-star".into(),
+          });
+        }
+
+        // 将标签替换成 attribute 属性选择符  div => [meta:tag="div"]
+        Component::LocalName(local_name) => {
           *component = Component::AttributeInNoNamespace {
             local_name: Ident::from("meta:tag"),
             operator: AttrSelectorOperator::Equal,
@@ -75,6 +87,7 @@ impl<'i> Visitor<'i> for MyVisitor {
             never_matches: false,
           };
         }
+        // 递归处理子选择器
         Component::Negation(selectors)
         | Component::Is(selectors)
         | Component::Where(selectors)
@@ -167,6 +180,14 @@ mod tests {
   fn test_has_selector() {
     let input = ".a:has(.b) { color: purple; }".to_string();
     let expected = ".__PREFIX__a:has(.__PREFIX__b){color:purple}".to_string();
+    assert_eq!(style_factory(input), expected);
+  }
+
+  #[test]
+  fn test_star_selector() {
+    let input = "* { color: black; } .a * {height: 100px;}".to_string();
+    let expected =
+      "unsupport-star{color:#000}.__PREFIX__a unsupport-star{height:200px}".to_string();
     assert_eq!(style_factory(input), expected);
   }
 }
