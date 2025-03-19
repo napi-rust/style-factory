@@ -5,12 +5,11 @@ extern crate napi_derive;
 
 use lightningcss::{
   properties::custom::{Token, TokenOrValue},
-  selector::{Component, Selector},
+  rules::{import::ImportRule, CssRule},
+  selector::{Component, Selector, SelectorList},
   stylesheet::{MinifyOptions, ParserOptions, PrinterOptions, StyleSheet},
   targets::Browsers,
-  values::ident::Ident,
-  values::length::LengthValue,
-  values::string::CSSString,
+  values::{ident::Ident, string::CSSString},
   visit_types,
   visitor::{Visit, VisitTypes, Visitor},
 };
@@ -27,7 +26,7 @@ impl<'i> Visitor<'i> for MyVisitor {
   type Error = Infallible;
 
   fn visit_types(&self) -> VisitTypes {
-    visit_types!(LENGTHS | TOKENS | SELECTORS)
+    visit_types!(LENGTHS | TOKENS | SELECTORS | RULES)
   }
 
   fn visit_token(&mut self, token: &mut TokenOrValue<'i>) -> Result<(), Self::Error> {
@@ -47,14 +46,6 @@ impl<'i> Visitor<'i> for MyVisitor {
         }
         _ => {}
       },
-      _ => {}
-    }
-    Ok(())
-  }
-
-  fn visit_length(&mut self, length: &mut LengthValue) -> Result<(), Self::Error> {
-    match length {
-      LengthValue::Px(px) => *length = LengthValue::Px(*px * 2.0),
       _ => {}
     }
     Ok(())
@@ -113,6 +104,36 @@ impl<'i> Visitor<'i> for MyVisitor {
 
     Ok(())
   }
+
+  fn visit_rule(&mut self, rule: &mut CssRule<'i>) -> Result<(), Self::Error> {
+    match rule {
+      CssRule::Import(ImportRule { url: _, .. }) => {
+        // TODO
+      }
+      _ => {}
+    }
+    // 确保其他规则也能被访问
+    rule.visit_children(self)?;
+
+    // rule_exit 时，处理一些特殊的选择器
+    // 如果是一个独立 :host 选择器 则移除这条规则
+    if let CssRule::Style(style) = rule {
+      let selectors: &SelectorList = &style.selectors;
+      let mut remove_rule = false;
+      // 如果 SelectorList 只有一个选择器，并且这个选择器是 :host 则移除这条规则
+      if selectors.0.len() == 1 {
+        let selector = &selectors.0;
+        if selector.len() == 1 {
+          // println!("selector: {:?}", selector);
+        }
+      }
+      if remove_rule {
+        // *rule = CssRule::NoOp;
+      }
+    }
+
+    Ok(())
+  }
 }
 
 #[napi]
@@ -158,7 +179,7 @@ mod tests {
     }"
     .to_string();
     let expected =
-      ".__PREFIX__body .__PREFIX__h1{color:#fff;height:20px;width:\"__RPX__(100)\"}".to_string();
+      ".__PREFIX__body .__PREFIX__h1{color:#fff;height:10px;width:\"__RPX__(100)\"}".to_string();
     assert_eq!(style_factory(input), expected);
   }
 
@@ -198,7 +219,7 @@ mod tests {
   fn test_star_selector() {
     let input = "* { color: black; } .a * {height: 100px;}".to_string();
     let expected =
-      "unsupport-star{color:#000}.__PREFIX__a unsupport-star{height:200px}".to_string();
+      "unsupport-star{color:#000}.__PREFIX__a unsupport-star{height:100px}".to_string();
     assert_eq!(style_factory(input), expected);
   }
 
@@ -206,6 +227,20 @@ mod tests {
   fn test_host_selector() {
     let input = ".a :host { color: black; }".to_string();
     let expected = ".__PREFIX__a [is=__HOST__]{color:#000}".to_string();
+    assert_eq!(style_factory(input), expected);
+  }
+
+  #[test]
+  fn test_import() {
+    let input = "@import url('./a.css');".to_string();
+    let expected = "@import-style url('./a.css');".to_string();
+    assert_eq!(style_factory(input), expected);
+  }
+
+  #[test]
+  fn test_remove_single_host() {
+    let input = ":host { color: black; }".to_string();
+    let expected = "".to_string();
     assert_eq!(style_factory(input), expected);
   }
 }
