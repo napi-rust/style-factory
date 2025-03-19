@@ -25,7 +25,7 @@ impl<'i> Visitor<'i> for MyVisitor {
   }
 
   fn visit_token(&mut self, token: &mut TokenOrValue<'i>) -> Result<(), Self::Error> {
-    println!("token: {:?}", token);
+    // println!("token: {:?}", token);
     // 判断如果 unit 是 rpx 的话, 就返回 2 倍 px
     match token {
       TokenOrValue::Token(value) => match value {
