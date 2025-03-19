@@ -77,6 +77,17 @@ impl<'i> Visitor<'i> for MyVisitor {
           });
         }
 
+        // 处理 :host 选择器 :host => [is=__HOST__]
+        Component::Host(_host) => {
+          *component = Component::AttributeInNoNamespace {
+            local_name: Ident::from("is"),
+            operator: AttrSelectorOperator::Equal,
+            value: CSSString::from("__HOST__".to_string()),
+            case_sensitivity: ParsedCaseSensitivity::CaseSensitive,
+            never_matches: false,
+          };
+        }
+
         // 将标签替换成 attribute 属性选择符  div => [meta:tag="div"]
         Component::LocalName(local_name) => {
           *component = Component::AttributeInNoNamespace {
@@ -188,6 +199,13 @@ mod tests {
     let input = "* { color: black; } .a * {height: 100px;}".to_string();
     let expected =
       "unsupport-star{color:#000}.__PREFIX__a unsupport-star{height:200px}".to_string();
+    assert_eq!(style_factory(input), expected);
+  }
+
+  #[test]
+  fn test_host_selector() {
+    let input = ".a :host { color: black; }".to_string();
+    let expected = ".__PREFIX__a [is=__HOST__]{color:#000}".to_string();
     assert_eq!(style_factory(input), expected);
   }
 }
