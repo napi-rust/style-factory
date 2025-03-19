@@ -57,13 +57,25 @@ impl<'i> Visitor<'i> for MyVisitor {
   fn visit_selector(&mut self, selector: &mut Selector<'i>) -> Result<(), Self::Error> {
     // 修改 selector 的样式名, 添加一个前缀
     for component in &mut selector.iter_mut_raw_match_order() {
-      // println!("component: {:?}", component);
       match component {
         Component::Class(class) => {
           *class = format!("__PREFIX__{}", class).into();
         }
-        Component::PseudoElement(pseudo) => {
-          println!("component: {:?}", pseudo);
+        Component::ID(id) => {
+          println!("component id: {:?}", id);
+        }
+        Component::Negation(selectors) => {
+          for sub_selector in selectors.iter_mut() {
+            self.visit_selector(sub_selector)?;
+          }
+        }
+        Component::Is(selectors)
+        | Component::Where(selectors)
+        | Component::Any(_, selectors)
+        | Component::Has(selectors) => {
+          for sub_selector in selectors.iter_mut() {
+            self.visit_selector(sub_selector)?;
+          }
         }
         _ => {}
       }
@@ -122,12 +134,12 @@ mod tests {
 
   #[test]
   fn test_pseudo_class() {
-    let input = ".a:not(.b:not(.c:not(.d))) {
+    let input = "#abc .a:not(.b:not(.c:not(.d))) .e::affter {
   color: red;
 }"
     .to_string();
     let expected =
-      ".__PREFIX__a:not(.__PREFIX__b:not(.__PREFIX__c:not(.__PREFIX__d))){color:red}".to_string();
+      "#abc .__PREFIX__a:not(.__PREFIX__b:not(.__PREFIX__c:not(.__PREFIX__d))) .__PREFIX__e::affter{color:red}".to_string();
     assert_eq!(style_factory(input), expected);
   }
 }
