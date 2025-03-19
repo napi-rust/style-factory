@@ -33,28 +33,15 @@ impl<'i> Visitor<'i> for MyVisitor {
 
   fn visit_selector(&mut self, selector: &mut Selector<'i>) -> Result<(), Self::Error> {
     // 修改 selector 的样式名, 添加一个前缀
-    println!("selector: {:?}", selector.len());
-    for component in &mut selector.iter_raw_match_order() {
+    for component in &mut selector.iter_mut_raw_match_order() {
       match component {
         Component::Class(class) => {
-          println!("class: {:?}", class);
-          // *class = format!("prefix-{}", class).into();
+          *class = format!("prefix-{}", class).into();
         }
-        _ => {
-          println!("component: {:?}", component);
-        }
+        _ => {}
       }
     }
 
-    // .for_each(|component| match component {
-    //   Component::Class(class) => {
-    //     println!("class: {:?}", class);
-    //     *class = format!("prefix-{}", class).into();
-    //   }
-    //   _ => {}
-    // });
-
-    // selector.append(Component::Class("prefix".into()));
     Ok(())
   }
 }
@@ -84,7 +71,7 @@ pub fn style_factory(css: String) -> String {
 
   stylesheet.visit(&mut MyVisitor).unwrap();
 
-  let res = stylesheet.to_css(printer_options).unwrap();
+  let res: lightningcss::stylesheet::ToCssResult = stylesheet.to_css(printer_options).unwrap();
 
   (res.code).to_string()
 }
@@ -95,8 +82,8 @@ mod tests {
 
   #[test]
   fn test_style_factory_basic() {
-    let input = ".body .h1{ color: #ffffff; height: 10px;     }".to_string();
-    let expected = ".body .h1{color:#fff;height:20px}".to_string();
+    let input = ".body .h1{ color: #ffffff; height: 10px; width: 100rpx;  }".to_string();
+    let expected = ".prefix-body .prefix-h1{color:#fff;height:20px}".to_string();
     assert_eq!(style_factory(input), expected);
   }
 }

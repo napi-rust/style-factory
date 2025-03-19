@@ -17,7 +17,10 @@
   "license": "MIT",
   "devDependencies": {
     "@napi-rs/cli": "^2.18.4",
-    "ava": "^6.0.1"
+    "ava": "^6.0.1",
+    "style-factory": "^2.3.0",
+    "tinybench": "^4.0.1",
+    "vitest": "^3.0.9"
   },
   "ava": {
     "timeout": "3m"
@@ -31,6 +34,7 @@
     "build:debug": "napi build --platform",
     "prepublishOnly": "napi prepublish -t npm",
     "test": "ava",
+    "bench": "vitest bench",
     "universal": "napi universal",
     "version": "napi version"
   }
