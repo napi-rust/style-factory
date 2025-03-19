@@ -26,7 +26,6 @@ impl<'i> Visitor<'i> for MyVisitor {
 
   fn visit_token(&mut self, token: &mut TokenOrValue<'i>) -> Result<(), Self::Error> {
     // println!("token: {:?}", token);
-    // 判断如果 unit 是 rpx 的话, 就返回 2 倍 px
     match token {
       TokenOrValue::Token(value) => match value {
         Token::Dimension {
@@ -35,8 +34,9 @@ impl<'i> Visitor<'i> for MyVisitor {
           ..
         } => {
           if *unit == "rpx" {
-            *value *= 2.0;
-            *unit = "px".into();
+            // 把当前 token 替换成  RPX(value) 的形式
+            *token =
+              TokenOrValue::Token(Token::String(format!("__RPX__({})", value).into()).into());
           }
         }
         _ => {}
@@ -57,9 +57,13 @@ impl<'i> Visitor<'i> for MyVisitor {
   fn visit_selector(&mut self, selector: &mut Selector<'i>) -> Result<(), Self::Error> {
     // 修改 selector 的样式名, 添加一个前缀
     for component in &mut selector.iter_mut_raw_match_order() {
+      // println!("component: {:?}", component);
       match component {
         Component::Class(class) => {
-          *class = format!("prefix-{}", class).into();
+          *class = format!("__PREFIX__{}", class).into();
+        }
+        Component::PseudoElement(pseudo) => {
+          println!("component: {:?}", pseudo);
         }
         _ => {}
       }
@@ -105,8 +109,25 @@ mod tests {
 
   #[test]
   fn test_style_factory_basic() {
-    let input = ".body .h1{ color: #ffffff; height: 10px; width: 100rpx;  }".to_string();
-    let expected = ".prefix-body .prefix-h1{color:#fff;height:20px;width:200px}".to_string();
+    let input = ".body .h1 { 
+    color: #ffffff; 
+    height: 10px; 
+    width: 100rpx;
+    }"
+    .to_string();
+    let expected =
+      ".__PREFIX__body .__PREFIX__h1{color:#fff;height:20px;width:\"__RPX__(100)\"}".to_string();
+    assert_eq!(style_factory(input), expected);
+  }
+
+  #[test]
+  fn test_pseudo_class() {
+    let input = ".a:not(.b:not(.c:not(.d))) {
+  color: red;
+}"
+    .to_string();
+    let expected =
+      ".__PREFIX__a:not(.__PREFIX__b:not(.__PREFIX__c:not(.__PREFIX__d))){color:red}".to_string();
     assert_eq!(style_factory(input), expected);
   }
 }
