@@ -8,10 +8,13 @@ use lightningcss::{
   selector::{Component, Selector},
   stylesheet::{MinifyOptions, ParserOptions, PrinterOptions, StyleSheet},
   targets::Browsers,
+  values::ident::Ident,
   values::length::LengthValue,
+  values::string::CSSString,
   visit_types,
   visitor::{Visit, VisitTypes, Visitor},
 };
+use parcel_selectors::attr::{AttrSelectorOperator, ParsedCaseSensitivity};
 use std::convert::Infallible;
 use std::string::String;
 
@@ -34,7 +37,7 @@ impl<'i> Visitor<'i> for MyVisitor {
           ..
         } => {
           if *unit == "rpx" {
-            // 把当前 token 替换成  RPX(value) 的形式
+            // 把当前 token 替换成  __RPX__(value) 的形式
             *token =
               TokenOrValue::Token(Token::String(format!("__RPX__({})", value).into()).into());
           }
@@ -55,11 +58,22 @@ impl<'i> Visitor<'i> for MyVisitor {
   }
 
   fn visit_selector(&mut self, selector: &mut Selector<'i>) -> Result<(), Self::Error> {
-    // 修改 selector 的样式名, 添加一个前缀
+    // 修改 selector 的样式名, 添加一个 __PREFIX__ 前缀
     for component in &mut selector.iter_mut_raw_match_order() {
       match component {
         Component::Class(class) => {
           *class = format!("__PREFIX__{}", class).into();
+        }
+        Component::LocalName(local_name) => {
+          // 将标签替换成 attribute 属性选择符  div => [meta:tag="div"]
+
+          *component = Component::AttributeInNoNamespace {
+            local_name: Ident::from("meta:tag"),
+            operator: AttrSelectorOperator::Equal,
+            value: CSSString::from(local_name.name.to_string()),
+            case_sensitivity: ParsedCaseSensitivity::CaseSensitive,
+            never_matches: false,
+          };
         }
         Component::Negation(selectors)
         | Component::Is(selectors)
@@ -131,7 +145,7 @@ mod tests {
 }"
     .to_string();
     let expected =
-      "#abc .__PREFIX__a:not(div.__PREFIX__b:not(.__PREFIX__c:not(.__PREFIX__d))) .__PREFIX__e::affter{color:red}".to_string();
+      "#abc .__PREFIX__a:not([meta\\:tag=div].__PREFIX__b:not(.__PREFIX__c:not(.__PREFIX__d))) .__PREFIX__e::affter{color:red}".to_string();
     assert_eq!(style_factory(input), expected);
   }
 

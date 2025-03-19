@@ -11,6 +11,7 @@ crate-type = ["cdylib"]
 napi = { version = "2.12.2", default-features = false, features = ["napi4"] }
 napi-derive = "2.12.2"
 lightningcss = { version = "1.0.0-alpha.65", features = ["visitor"] }
+parcel_selectors = "0.28.1"
 
 [build-dependencies]
 napi-build = "2.0.1"
