@@ -83,7 +83,7 @@ mod tests {
   #[test]
   fn test_style_factory_basic() {
     let input = ".body .h1{ color: #ffffff; height: 10px; width: 100rpx;  }".to_string();
-    let expected = ".prefix-body .prefix-h1{color:#fff;height:20px}".to_string();
+    let expected = ".prefix-body .prefix-h1{color:#fff;height:20px;width:100rpx}".to_string();
     assert_eq!(style_factory(input), expected);
   }
 }
