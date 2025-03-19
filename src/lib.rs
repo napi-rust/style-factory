@@ -61,17 +61,9 @@ impl<'i> Visitor<'i> for MyVisitor {
         Component::Class(class) => {
           *class = format!("__PREFIX__{}", class).into();
         }
-        Component::ID(id) => {
-          println!("component id: {:?}", id);
-        }
-        Component::Negation(selectors) => {
-          for sub_selector in selectors.iter_mut() {
-            self.visit_selector(sub_selector)?;
-          }
-        }
-        Component::Is(selectors)
+        Component::Negation(selectors)
+        | Component::Is(selectors)
         | Component::Where(selectors)
-        | Component::Any(_, selectors)
         | Component::Has(selectors) => {
           for sub_selector in selectors.iter_mut() {
             self.visit_selector(sub_selector)?;
@@ -134,12 +126,33 @@ mod tests {
 
   #[test]
   fn test_pseudo_class() {
-    let input = "#abc .a:not(.b:not(.c:not(.d))) .e::affter {
+    let input = "#abc .a:not(div.b:not(.c:not(.d))) .e::affter {
   color: red;
 }"
     .to_string();
     let expected =
-      "#abc .__PREFIX__a:not(.__PREFIX__b:not(.__PREFIX__c:not(.__PREFIX__d))) .__PREFIX__e::affter{color:red}".to_string();
+      "#abc .__PREFIX__a:not(div.__PREFIX__b:not(.__PREFIX__c:not(.__PREFIX__d))) .__PREFIX__e::affter{color:red}".to_string();
+    assert_eq!(style_factory(input), expected);
+  }
+
+  #[test]
+  fn test_is_selector() {
+    let input = ".a:is(.b, .c) { color: blue; }".to_string();
+    let expected = ".__PREFIX__a:is(.__PREFIX__b,.__PREFIX__c){color:#00f}".to_string();
+    assert_eq!(style_factory(input), expected);
+  }
+
+  #[test]
+  fn test_where_selector() {
+    let input = ".a:where(.b, .c) { color: green; }".to_string();
+    let expected = ".__PREFIX__a:where(.__PREFIX__b,.__PREFIX__c){color:green}".to_string();
+    assert_eq!(style_factory(input), expected);
+  }
+
+  #[test]
+  fn test_has_selector() {
+    let input = ".a:has(.b) { color: purple; }".to_string();
+    let expected = ".__PREFIX__a:has(.__PREFIX__b){color:purple}".to_string();
     assert_eq!(style_factory(input), expected);
   }
 }
