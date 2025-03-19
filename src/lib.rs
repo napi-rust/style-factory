@@ -4,6 +4,7 @@
 extern crate napi_derive;
 
 use lightningcss::{
+  properties::custom::{Token, TokenOrValue},
   selector::{Component, Selector},
   stylesheet::{MinifyOptions, ParserOptions, PrinterOptions, StyleSheet},
   targets::Browsers,
@@ -20,7 +21,29 @@ impl<'i> Visitor<'i> for MyVisitor {
   type Error = Infallible;
 
   fn visit_types(&self) -> VisitTypes {
-    visit_types!(URLS | LENGTHS)
+    visit_types!(LENGTHS | TOKENS | SELECTORS)
+  }
+
+  fn visit_token(&mut self, token: &mut TokenOrValue<'i>) -> Result<(), Self::Error> {
+    println!("token: {:?}", token);
+    // 判断如果 unit 是 rpx 的话, 就返回 2 倍 px
+    match token {
+      TokenOrValue::Token(value) => match value {
+        Token::Dimension {
+          ref mut value,
+          unit,
+          ..
+        } => {
+          if *unit == "rpx" {
+            *value *= 2.0;
+            *unit = "px".into();
+          }
+        }
+        _ => {}
+      },
+      _ => {}
+    }
+    Ok(())
   }
 
   fn visit_length(&mut self, length: &mut LengthValue) -> Result<(), Self::Error> {
@@ -83,7 +106,7 @@ mod tests {
   #[test]
   fn test_style_factory_basic() {
     let input = ".body .h1{ color: #ffffff; height: 10px; width: 100rpx;  }".to_string();
-    let expected = ".prefix-body .prefix-h1{color:#fff;height:20px;width:100rpx}".to_string();
+    let expected = ".prefix-body .prefix-h1{color:#fff;height:20px;width:200px}".to_string();
     assert_eq!(style_factory(input), expected);
   }
 }
