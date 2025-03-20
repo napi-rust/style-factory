@@ -1,6 +1,7 @@
 use indoc::formatdoc;
 use lazy_regex::regex_replace_all;
 use md5::{Digest, Md5};
+use pipe_trait::Pipe;
 use std::collections::HashMap;
 
 // ---- Core Logic ----
@@ -40,26 +41,26 @@ fn json_escape(s: &str) -> String {
 }
 
 fn process_text(text: &str, mut imports: Option<&mut HashMap<String, String>>) -> String {
-  let escaped = json_escape(text);
-
-  let replaced = regex_replace_all!("__PREFIX__", &escaped, r#"" + prefix + ""#).into_owned();
-  let replaced = regex_replace_all!("__HOST__", &replaced, r#"" + host + ""#).into_owned();
-  let replaced = regex_replace_all!(r#"\\"__RPX__\(([^)]+)\)\\""#, &replaced, |_, unit| format!(
-    r#"" + rpx({}) + "px"#,
-    unit
-  ))
-  .into_owned();
-
-  if let Some(imports) = &mut imports {
-    regex_replace_all!(r#"@import-style \("([^"]+)"\);"#, &replaced, |_, url| {
-      let fn_name = format!("I_{}", md5_hash(url));
-      imports.insert(url.to_string(), fn_name.clone());
-      format!(r#"" + {}(options) + ""#, fn_name)
+  json_escape(text)
+    .pipe(|escaped| regex_replace_all!("__PREFIX__", &escaped, r#"" + prefix + ""#).into_owned())
+    .pipe(|replaced| regex_replace_all!("__HOST__", &replaced, r#"" + host + ""#).into_owned())
+    .pipe(|replaced| {
+      regex_replace_all!(r#"\\"__RPX__\(([^)]+)\)\\""#, &replaced, |_, unit| {
+        format!(r#"" + rpx({}) + "px"#, unit)
+      })
+      .into_owned()
     })
-    .into_owned()
-  } else {
-    replaced
-  }
+    .pipe(|result| match &mut imports {
+      Some(imports_map) => {
+        regex_replace_all!(r#"@import-style \("([^"]+)"\);"#, &result, |_, url| {
+          let fn_name = format!("I_{}", md5_hash(url));
+          imports_map.insert(url.to_string(), fn_name.clone());
+          format!(r#"" + {}(options) + ""#, fn_name)
+        })
+        .into_owned()
+      }
+      None => result,
+    })
 }
 
 fn generate_output(
