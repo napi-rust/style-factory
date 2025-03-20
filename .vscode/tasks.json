@@ -11,6 +11,16 @@
         "panel": "dedicated"
       },
       "problemMatcher": "$rustc"
+    },
+    {
+      "label": "Review Snapshots",
+      "type": "shell",
+      "command": "cargo insta review",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
     }
   ]
 }

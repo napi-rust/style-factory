@@ -25,25 +25,14 @@ pub fn style_factory(css_text: String) -> Result<String, napi::Error> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use indoc::indoc;
+  use insta::assert_snapshot;
 
   #[test]
   fn test_style_factory() {
     let css_text = r#".a { color: red }"#.to_string();
     let res = style_factory(css_text.clone());
-    let expected = indoc! { r#"
-      export default function styleFactory(options) {
-        var prefix = options.prefix || '';
-        var tag = options.tag || (tag => tag);
-        var rpx = options.rpx;
-        var host = options.host || 'host-placeholder';
-        var css = "." + prefix + "a{color:red}";
-        
-        return css;
-      }"#
-    };
     assert!(res.is_ok());
-    assert_eq!(res.unwrap(), expected);
+    assert_snapshot!(res.unwrap());
   }
 
   #[test]
@@ -53,10 +42,7 @@ mod tests {
     assert!(res.is_err());
     match res {
       Err(e) => {
-        assert_eq!(
-          e.reason,
-          "Transform error: Parse error: Unexpected end of input at :0:15"
-        );
+        assert_snapshot!(e.reason,);
       }
       _ => panic!("Unexpected result"),
     }

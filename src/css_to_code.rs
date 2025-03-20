@@ -109,7 +109,7 @@ fn generate_output(
 #[cfg(test)]
 mod tests {
   use super::*;
-  use indoc::indoc;
+  use insta::assert_snapshot;
 
   #[test]
   fn test_tow_prefix() {
@@ -119,18 +119,8 @@ mod tests {
       host_css: None,
     };
     let output = css_to_code(options);
-    let expected = indoc! {r#"
-      export default function styleFactory(options) {
-        var prefix = options.prefix || '';
-        var tag = options.tag || (tag => tag);
-        var rpx = options.rpx;
-        var host = options.host || 'host-placeholder';
-        var css = "." + prefix + "a{width:" + rpx(100) + "px}." + prefix + "b{height:" + rpx(50) + "px}";
-        
-        return css;
-      }"#
-    };
-    assert_eq!(output.trim(), expected.trim());
+
+    assert_snapshot!(output.trim());
   }
 
   #[test]
@@ -141,18 +131,7 @@ mod tests {
       host_css: None,
     };
     let output = css_to_code(options);
-    let expected = indoc! {r#"
-      export default function styleFactory(options) {
-        var prefix = options.prefix || '';
-        var tag = options.tag || (tag => tag);
-        var rpx = options.rpx;
-        var host = options.host || 'host-placeholder';
-        var css = "[is=" + host + "]{color:#fff}";
-        
-        return css;
-      }"#
-    };
 
-    assert_eq!(output.trim(), expected);
+    assert_snapshot!(output.trim());
   }
 }

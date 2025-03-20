@@ -185,6 +185,8 @@ pub fn transform_css(css: String) -> Result<String, Box<dyn Error>> {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use indoc::indoc;
+  use insta::assert_snapshot;
 
   #[test]
   fn test_transform_css_basic() {
@@ -194,9 +196,7 @@ mod tests {
     width: 100rpx;
     }"
     .to_string();
-    let expected =
-      ".__PREFIX__body .__PREFIX__h1{color:#fff;height:10px;width:\"__RPX__(100)\"}".to_string();
-    assert_eq!(transform_css(input).unwrap(), expected);
+    assert_snapshot!(transform_css(input).unwrap());
   }
 
   #[test]
@@ -205,91 +205,82 @@ mod tests {
   color: red;
 }"
     .to_string();
-    let expected =
-      "#abc .__PREFIX__a:not([meta\\:tag=div].__PREFIX__b:not(.__PREFIX__c:not(.__PREFIX__d))) .__PREFIX__e::affter{color:red}".to_string();
-    assert_eq!(transform_css(input).unwrap(), expected);
+    assert_snapshot!(transform_css(input).unwrap());
   }
 
   #[test]
   fn test_is_selector() {
     let input = ".a:is(.b, .c) { color: blue; }".to_string();
-    let expected = ".__PREFIX__a:is(.__PREFIX__b,.__PREFIX__c){color:#00f}".to_string();
-    assert_eq!(transform_css(input).unwrap(), expected);
+    assert_snapshot!(transform_css(input).unwrap());
   }
 
   #[test]
   fn test_where_selector() {
     let input = ".a:where(.b, .c) { color: green; }".to_string();
-    let expected = ".__PREFIX__a:where(.__PREFIX__b,.__PREFIX__c){color:green}".to_string();
-    assert_eq!(transform_css(input).unwrap(), expected);
+    assert_snapshot!(transform_css(input).unwrap());
   }
 
   #[test]
   fn test_has_selector() {
     let input = ".a:has(.b) { color: purple; }".to_string();
-    let expected = ".__PREFIX__a:has(.__PREFIX__b){color:purple}".to_string();
-    assert_eq!(transform_css(input).unwrap(), expected);
+    assert_snapshot!(transform_css(input).unwrap(),);
   }
 
   #[test]
   fn test_star_selector() {
     let input = "* { color: black; } .a * {height: 100px;}".to_string();
-    let expected =
-      "unsupport-star{color:#000}.__PREFIX__a unsupport-star{height:100px}".to_string();
-    assert_eq!(transform_css(input).unwrap(), expected);
+    assert_snapshot!(transform_css(input).unwrap(),);
   }
 
   #[test]
   fn test_host_selector() {
     let input = ".a :host { color: black; }".to_string();
-    let expected = ".__PREFIX__a [is=__HOST__]{color:#000}".to_string();
-    assert_eq!(transform_css(input).unwrap(), expected);
+    assert_snapshot!(transform_css(input).unwrap());
   }
 
   #[test]
   fn test_import() {
     let input = "@import url('./a.css');".to_string();
-    let expected = "@import-style (\"./a.css\");".to_string();
-    assert_eq!(transform_css(input).unwrap(), expected);
+    assert_snapshot!(transform_css(input).unwrap());
   }
 
   #[test]
   fn test_remove_single_host() {
     let input = ":host { color: black; }".to_string();
-    let expected = "".to_string();
-    assert_eq!(transform_css(input).unwrap(), expected);
+    assert_snapshot!(transform_css(input).unwrap());
   }
 
   #[test]
   fn test_keyframes() {
-    let input = "@-webkit-keyframes anim-show {
-  100% {
-    opacity: 1;
-  }
-}
+    let input = indoc! {r#"
+      @-webkit-keyframes anim-show {
+        100% {
+          opacity: 1;
+        }
+      }
 
-@keyframes anim-show {
-  100% {
-    opacity: 1;
-  }
-}
+      @keyframes anim-show {
+        100% {
+          opacity: 1;
+        }
+      }
 
-@-webkit-keyframes anim-hide {
-  100% {
-    opacity: 0;
-  }
-}
+      @-webkit-keyframes anim-hide {
+        100% {
+          opacity: 0;
+        }
+      }
 
-@keyframes anim-hide {
-  100% {
-    opacity: 0;
-  }
-}
-"
+      @keyframes anim-hide {
+        100% {
+          opacity: 0;
+        }
+      }
+      "#
+    }
     .to_string();
-    let expected = "@-webkit-keyframes anim-show{to{opacity:1}}@keyframes anim-show{to{opacity:1}}@-webkit-keyframes anim-hide{to{opacity:0}}@keyframes anim-hide{to{opacity:0}}"
-      .to_string();
-    assert_eq!(transform_css(input).unwrap(), expected);
+
+    assert_snapshot!(transform_css(input).unwrap());
   }
 
   #[test]
@@ -303,26 +294,20 @@ mod tests {
     match result {
       Ok(_) => panic!("Expected an error, but got Ok"),
       Err(e) => {
-        println!("Error: {}", e);
-        let expected = "Parse error: @import rules must precede all rules aside from @charset and @layer statements at :2:12".to_string();
-        assert_eq!(e.to_string(), expected);
+        assert_snapshot!(e.to_string());
       }
     }
   }
 
   #[test]
   fn test_throw_error_input() {
-    let input = r#"
-    .a  color: red;}
-  "#
-    .to_string();
+    let input = r#" .a  color: red;}"#.to_string();
     let result = transform_css(input);
     match result {
       Ok(_) => panic!("Expected an error, but got Ok"),
       Err(e) => {
         println!("Error: {}", e);
-        let expected = "Parse error: Unexpected end of input at :2:3".to_string();
-        assert_eq!(e.to_string(), expected);
+        assert_snapshot!(e.to_string());
       }
     }
   }
