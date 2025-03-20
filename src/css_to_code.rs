@@ -1,4 +1,4 @@
-use indoc::{formatdoc, indoc};
+use indoc::formatdoc;
 use lazy_regex::regex_replace_all;
 use md5::{Digest, Md5};
 use std::collections::HashMap;
@@ -109,6 +109,7 @@ fn generate_output(
 #[cfg(test)]
 mod tests {
   use super::*;
+  use indoc::indoc;
 
   #[test]
   fn test_tow_prefix() {

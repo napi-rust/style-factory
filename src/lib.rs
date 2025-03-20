@@ -7,7 +7,6 @@ mod css_to_code;
 mod transform_css;
 
 use crate::css_to_code::{css_to_code, Css2CodeOptions};
-use indoc::indoc;
 use std::string::String;
 use transform_css::transform_css;
 
@@ -26,6 +25,7 @@ pub fn style_factory(css_text: String) -> Result<String, napi::Error> {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use indoc::indoc;
 
   #[test]
   fn test_style_factory() {
