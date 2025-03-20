@@ -8,11 +8,11 @@ export const runCompile = (file: string) => {
   const context = readFileSync(file, 'utf8');
 
   {
-    bench(`styleFactory ${pkg.version}`, () => {
+    bench(`styleFactory ${pkg.version} (${context.length})`, () => {
       styleFactory(context);
     });
 
-    bench('styleFactory Rust', () => {
+    bench(`styleFactory Rust (${context.length})`, () => {
       styleFactoryRust(context);
     });
   }
