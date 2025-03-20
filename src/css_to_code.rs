@@ -1,16 +1,9 @@
-use lazy_regex::{regex, Regex};
+use lazy_regex::regex_replace_all;
 use md5::{Digest, Md5};
 use std::collections::HashMap;
 
-// ---- Static Regex Patterns ----
-lazy_static::lazy_static! {
-  static ref PREFIX_REGEX: &'static Regex = regex!("__PREFIX__");
-  static ref HOST_REGEX: &'static Regex = regex!("__HOST__");
-  static ref RPX_REGEX: &'static Regex = regex!(r#"\\"__RPX__\(([^)]+)\)\\""#);
-  static ref IMPORT_REGEX: &'static Regex = regex!(r#"@import-style \("([^"]+)"\);"#);
-}
-
 // ---- Core Logic ----
+#[derive(Debug, Clone)]
 pub struct Css2CodeOptions<'a> {
   pub css: &'a str,
   pub host_css: Option<&'a str>,
@@ -48,30 +41,24 @@ fn json_escape(s: &str) -> String {
 fn process_text(text: &str, mut imports: Option<&mut HashMap<String, String>>) -> String {
   let escaped = json_escape(text);
 
-  let replaced = PREFIX_REGEX
-    .replace_all(&escaped, |_: &regex::Captures| "\" + prefix + \"")
-    .to_string();
-  let replaced = HOST_REGEX
-    .replace_all(&replaced, |_: &regex::Captures| "\" + host + \"")
-    .to_string();
-  let replaced = RPX_REGEX.replace_all(&replaced, |caps: &regex::Captures| {
-    format!(r#"" + rpx({}) + "px"#, &caps[1])
-  });
+  let replaced = regex_replace_all!("__PREFIX__", &escaped, r#"" + prefix + ""#).into_owned();
+  let replaced = regex_replace_all!("__HOST__", &replaced, r#"" + host + ""#).into_owned();
+  let replaced = regex_replace_all!(r#"\\"__RPX__\(([^)]+)\)\\""#, &replaced, |_, unit| format!(
+    r#"" + rpx({}) + "px"#,
+    unit
+  ))
+  .into_owned();
 
-  let replaced = if let Some(imports) = &mut imports {
-    IMPORT_REGEX
-      .replace_all(&replaced, |caps: &regex::Captures| {
-        let url = caps[1].to_string();
-        let fn_name = format!("I_{}", md5_hash(url.as_str()));
-        imports.insert(url.to_string(), fn_name.clone());
-        format!(r#"" + {}(options) + ""#, fn_name)
-      })
-      .to_string()
+  if let Some(imports) = &mut imports {
+    regex_replace_all!(r#"@import-style \("([^"]+)"\);"#, &replaced, |_, url| {
+      let fn_name = format!("I_{}", md5_hash(url));
+      imports.insert(url.to_string(), fn_name.clone());
+      format!(r#"" + {}(options) + ""#, fn_name)
+    })
+    .into_owned()
   } else {
-    replaced.to_string()
-  };
-
-  replaced
+    replaced
+  }
 }
 
 fn generate_output(
