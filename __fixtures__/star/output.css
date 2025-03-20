@@ -1,7 +1,7 @@
 UN_STAR {
   padding: 0;
 }
-[meta\:tag="page"] {
+[meta\:tag='page'] {
   color: red;
 }
 .foo__abc UN_STAR {

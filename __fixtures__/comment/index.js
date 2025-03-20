@@ -7,13 +7,7 @@ export default function styleFactory(options) {
     };
   var rpx = options.rpx;
   var host = options.host || 'host-placeholder';
-  var css = [
-    '/*注释*/.',
-    prefix,
-    'foo{color:red;height:',
-    rpx(100) + 'px',
-    '}',
-  ].join('');
+  var css = ['/*注释*/.', prefix, 'foo{color:red;height:', rpx(100) + 'px', '}'].join('');
 
   return css;
 }

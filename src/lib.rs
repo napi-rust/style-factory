@@ -15,18 +15,18 @@ use lightningcss::{
   visit_types,
   visitor::{Visit, VisitTypes, Visitor},
 };
+
 use parcel_selectors::{
   attr::{AttrSelectorOperator, ParsedCaseSensitivity},
   parser::LocalName,
 };
 use printer_options::get_printer_options;
-use std::convert::Infallible;
 use std::string::String;
 
 struct MyVisitor;
 
 impl<'i> Visitor<'i> for MyVisitor {
-  type Error = Infallible;
+  type Error = String;
 
   fn visit_types(&self) -> VisitTypes {
     visit_types!(LENGTHS | TOKENS | SELECTORS | RULES)
@@ -145,15 +145,23 @@ impl<'i> Visitor<'i> for MyVisitor {
 }
 
 #[napi]
-pub fn style_factory(css: String) -> String {
-  let mut stylesheet = StyleSheet::parse(&css, ParserOptions::default()).unwrap();
+pub fn style_factory(css: String) -> napi::Result<String> {
+  // 1. 解析 CSS（处理解析错误）
+  let mut stylesheet = StyleSheet::parse(&css, ParserOptions::default())
+    .map_err(|e| napi::Error::from_reason(format!("Parse error: {}", e)))?;
 
-  stylesheet.visit(&mut MyVisitor).unwrap();
+  // 2. 遍历规则（处理访问错误）
+  stylesheet
+    .visit(&mut MyVisitor)
+    .map_err(|e| napi::Error::from_reason(format!("Visit error: {}", e)))?;
 
-  let res: lightningcss::stylesheet::ToCssResult =
-    stylesheet.to_css(get_printer_options()).unwrap();
+  // 3. 生成 CSS（处理序列化错误）
+  let res: lightningcss::stylesheet::ToCssResult = stylesheet
+    .to_css(get_printer_options())
+    .map_err(|e| napi::Error::from_reason(format!("Serialize error: {}", e)))?;
 
-  (res.code).to_string()
+  // 4. 返回成功结果
+  Ok(res.code.to_string())
 }
 
 #[cfg(test)]
@@ -170,7 +178,7 @@ mod tests {
     .to_string();
     let expected =
       ".__PREFIX__body .__PREFIX__h1{color:#fff;height:10px;width:\"__RPX__(100)\"}".to_string();
-    assert_eq!(style_factory(input), expected);
+    assert_eq!(style_factory(input).unwrap(), expected);
   }
 
   #[test]
@@ -181,28 +189,28 @@ mod tests {
     .to_string();
     let expected =
       "#abc .__PREFIX__a:not([meta\\:tag=div].__PREFIX__b:not(.__PREFIX__c:not(.__PREFIX__d))) .__PREFIX__e::affter{color:red}".to_string();
-    assert_eq!(style_factory(input), expected);
+    assert_eq!(style_factory(input).unwrap(), expected);
   }
 
   #[test]
   fn test_is_selector() {
     let input = ".a:is(.b, .c) { color: blue; }".to_string();
     let expected = ".__PREFIX__a:is(.__PREFIX__b,.__PREFIX__c){color:#00f}".to_string();
-    assert_eq!(style_factory(input), expected);
+    assert_eq!(style_factory(input).unwrap(), expected);
   }
 
   #[test]
   fn test_where_selector() {
     let input = ".a:where(.b, .c) { color: green; }".to_string();
     let expected = ".__PREFIX__a:where(.__PREFIX__b,.__PREFIX__c){color:green}".to_string();
-    assert_eq!(style_factory(input), expected);
+    assert_eq!(style_factory(input).unwrap(), expected);
   }
 
   #[test]
   fn test_has_selector() {
     let input = ".a:has(.b) { color: purple; }".to_string();
     let expected = ".__PREFIX__a:has(.__PREFIX__b){color:purple}".to_string();
-    assert_eq!(style_factory(input), expected);
+    assert_eq!(style_factory(input).unwrap(), expected);
   }
 
   #[test]
@@ -210,27 +218,59 @@ mod tests {
     let input = "* { color: black; } .a * {height: 100px;}".to_string();
     let expected =
       "unsupport-star{color:#000}.__PREFIX__a unsupport-star{height:100px}".to_string();
-    assert_eq!(style_factory(input), expected);
+    assert_eq!(style_factory(input).unwrap(), expected);
   }
 
   #[test]
   fn test_host_selector() {
     let input = ".a :host { color: black; }".to_string();
     let expected = ".__PREFIX__a [is=__HOST__]{color:#000}".to_string();
-    assert_eq!(style_factory(input), expected);
+    assert_eq!(style_factory(input).unwrap(), expected);
   }
 
   #[test]
   fn test_import() {
     let input = "@import url('./a.css');".to_string();
     let expected = "@import \"./a.css\";".to_string();
-    assert_eq!(style_factory(input), expected);
+    assert_eq!(style_factory(input).unwrap(), expected);
   }
 
   #[test]
   fn test_remove_single_host() {
     let input = ":host { color: black; }".to_string();
     let expected = "".to_string();
-    assert_eq!(style_factory(input), expected);
+    assert_eq!(style_factory(input).unwrap(), expected);
+  }
+
+  #[test]
+  fn test_keyframes() {
+    let input = "@-webkit-keyframes anim-show {
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes anim-show {
+  100% {
+    opacity: 1;
+  }
+}
+
+@-webkit-keyframes anim-hide {
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes anim-hide {
+  100% {
+    opacity: 0;
+  }
+}
+"
+    .to_string();
+    let expected = "@-webkit-keyframes anim-show{to{opacity:1}}@keyframes anim-show{to{opacity:1}}@-webkit-keyframes anim-hide{to{opacity:0}}@keyframes anim-hide{to{opacity:0}}"
+      .to_string();
+    assert_eq!(style_factory(input).unwrap(), expected);
   }
 }

@@ -1,5 +1,5 @@
 /* host code begin */
-[is="host-index"] {
+[is='host-index'] {
   color: red;
 }
 /* host code end */
@@ -34,7 +34,7 @@
   --main-bg-color: #fefefe; /*浅色背景*/
   --main-text-color: #363636; /*深色文字*/
 }
-[theme="dark"]:root {
+[theme='dark']:root {
   --main-bg-color: #2f3a44; /*深色背景*/
   --main-text-color: #c5c5c5; /*浅色文字*/
 }

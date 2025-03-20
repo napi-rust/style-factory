@@ -8,9 +8,8 @@ describe('styleFactory', () => {
     expect(css).toMatchInlineSnapshot(`"[meta\\:tag=body]{color:red}"`);
   });
 
-
   it('keyframe case', () => {
     const css = styleFactory(`@keyframes mymove { from { top: 0px; } to { top: 200px; } }`);
     expect(css).toMatchInlineSnapshot(`"@keyframes mymove{0%{top:0}to{top:200px}}"`);
-  })
+  });
 });

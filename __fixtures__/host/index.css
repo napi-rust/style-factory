@@ -3,11 +3,9 @@
   width: 100rpx;
 }
 
-
 :host {
   font-size: 10px;
 }
-
 
 .a :host {
   height: 100rpx;

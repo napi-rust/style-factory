@@ -1,3 +1,5 @@
+@import url('./a.css');
+
 .foo {
   color: red;
   height: 100rpx;
@@ -6,5 +8,3 @@
 view {
   color: green;
 }
-
-@import url('./a.css');

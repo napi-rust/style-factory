@@ -7,13 +7,7 @@ export default function styleFactory(options) {
     };
   var rpx = options.rpx;
   var host = options.host || 'host-placeholder';
-  var css = [
-    '.',
-    prefix,
-    'h1:not(.',
-    prefix,
-    "foo){background-image:url('abc).sbc')}",
-  ].join('');
+  var css = ['.', prefix, 'h1:not(.', prefix, "foo){background-image:url('abc).sbc')}"].join('');
 
   return css;
 }

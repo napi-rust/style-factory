@@ -2,8 +2,7 @@ import { readFileSync } from 'fs-extra';
 import styleFactory from 'style-factory';
 import { styleFactory as styleFactoryRust } from '../index';
 import { bench } from 'vitest';
-import pkg from 'style-factory/package.json'
-
+import pkg from 'style-factory/package.json';
 
 export const runCompile = (file: string) => {
   const context = readFileSync(file, 'utf8');

@@ -7,15 +7,7 @@ export default function styleFactory(options) {
     };
   var rpx = options.rpx;
   var host = options.host || 'host-placeholder';
-  var css = [
-    '.',
-    prefix,
-    'a ',
-    "[is='" + host + "']",
-    '{height:',
-    rpx(100) + 'px',
-    '}',
-  ].join('');
+  var css = ['.', prefix, 'a ', "[is='" + host + "']", '{height:', rpx(100) + 'px', '}'].join('');
   var hostStyleText = [
     "[is='" + host + "']",
     '{color:red;width:',
