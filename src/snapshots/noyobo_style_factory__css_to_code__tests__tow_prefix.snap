@@ -1,0 +1,13 @@
+---
+source: src/css_to_code.rs
+expression: output.trim()
+---
+export default function styleFactory(options) {
+  var prefix = options.prefix || '';
+  var tag = options.tag || (tag => tag);
+  var rpx = options.rpx;
+  var host = options.host || 'host-placeholder';
+  var css = "." + prefix + "a{width:" + rpx(100) + "px}." + prefix + "b{height:" + rpx(50) + "px}";
+  
+  return css;
+}

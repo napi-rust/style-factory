@@ -1,0 +1,5 @@
+---
+source: src/lib.rs
+expression: e.reason
+---
+Transform error: Parse error: Unexpected end of input at :0:15

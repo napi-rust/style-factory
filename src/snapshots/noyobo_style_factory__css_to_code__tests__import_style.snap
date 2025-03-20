@@ -1,0 +1,14 @@
+---
+source: src/css_to_code.rs
+expression: output.trim()
+---
+import I_f3cea1431258782941feb3c71a992799 from "./a.css";
+export default function styleFactory(options) {
+  var prefix = options.prefix || '';
+  var tag = options.tag || (tag => tag);
+  var rpx = options.rpx;
+  var host = options.host || 'host-placeholder';
+  var css = "" + I_f3cea1431258782941feb3c71a992799(options) + "";
+  
+  return css;
+}

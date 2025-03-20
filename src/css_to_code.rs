@@ -52,11 +52,16 @@ fn process_text(text: &str, mut imports: Option<&mut HashMap<String, String>>) -
     })
     .pipe(|result| match &mut imports {
       Some(imports_map) => {
-        regex_replace_all!(r#"@import-style \("([^"]+)"\);"#, &result, |_, url| {
-          let fn_name = format!("I_{}", md5_hash(url));
-          imports_map.insert(url.to_string(), fn_name.clone());
-          format!(r#"" + {}(options) + ""#, fn_name)
-        })
+        // @import-style (\"./a.css\") => import I_123456 from './a.css';
+        regex_replace_all!(
+          r#"\@import-style \(\\"([^\)]+)\\"\);"#,
+          &result,
+          |_, url| {
+            let fn_name = format!("I_{}", md5_hash(url));
+            imports_map.insert(url.to_string(), fn_name.clone());
+            format!(r#"" + {}(options) + ""#, fn_name)
+          }
+        )
         .into_owned()
       }
       None => result,
@@ -85,7 +90,7 @@ fn generate_output(
 
   let import_code = imports
     .iter()
-    .map(|(url, fn_name)| format!("import {fn_name} from '{url}';"))
+    .map(|(url, fn_name)| format!(r#"import {fn_name} from "{url}";"#))
     .collect::<Vec<_>>()
     .join("\n");
 
@@ -127,6 +132,18 @@ mod tests {
   #[test]
   fn test_host_css() {
     let input = r#"[is=__HOST__]{color:#fff}"#;
+    let options = Css2CodeOptions {
+      css: input,
+      host_css: None,
+    };
+    let output = css_to_code(options);
+
+    assert_snapshot!(output.trim());
+  }
+
+  #[test]
+  fn test_import_style() {
+    let input = r#"@import-style ("./a.css");"#;
     let options = Css2CodeOptions {
       css: input,
       host_css: None,

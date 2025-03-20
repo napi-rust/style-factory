@@ -33,6 +33,22 @@ describe('styleFactory', () => {
     `);
   });
 
+  it('import css', () => {
+    const css = styleFactory(`@import url('./style.css');`);
+    expect(css).toMatchInlineSnapshot(`
+      "import I_1568b90116e4f2a5d70b882f42df82dd from "./style.css";
+      export default function styleFactory(options) {
+        var prefix = options.prefix || '';
+        var tag = options.tag || (tag => tag);
+        var rpx = options.rpx;
+        var host = options.host || 'host-placeholder';
+        var css = "" + I_1568b90116e4f2a5d70b882f42df82dd(options) + "";
+        
+        return css;
+      }"
+    `);
+  })
+
   it('throw error', () => {
     expect(() => {
       styleFactory(`.a color: #ff0000; }`, { throwOnError: true });

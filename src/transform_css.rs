@@ -121,6 +121,7 @@ impl<'i> Visitor<'i> for MyVisitor {
   fn visit_rule(&mut self, rule: &mut CssRule<'i>) -> Result<(), Self::Error> {
     match rule {
       CssRule::Import(ref import_rule) => {
+        // @import url('./a.css'); => @import-style ("./a.css");
         *rule = CssRule::Unknown(UnknownAtRule {
           name: "import-style".into(),
           prelude: TokenList(vec![
