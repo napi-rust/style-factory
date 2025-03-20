@@ -1,6 +1,6 @@
 use lightningcss::{
-  properties::custom::{Token, TokenOrValue},
-  rules::{import::ImportRule, CssRule},
+  properties::custom::{Token, TokenList, TokenOrValue},
+  rules::{unknown::UnknownAtRule, CssRule},
   selector::{Component, Selector, SelectorList},
   stylesheet::{ParserOptions, StyleSheet},
   traits::ToCss,
@@ -120,8 +120,15 @@ impl<'i> Visitor<'i> for MyVisitor {
 
   fn visit_rule(&mut self, rule: &mut CssRule<'i>) -> Result<(), Self::Error> {
     match rule {
-      CssRule::Import(ImportRule { url: _, .. }) => {
-        // TODO
+      CssRule::Import(ref import_rule) => {
+        *rule = CssRule::Unknown(UnknownAtRule {
+          name: "import-style".into(),
+          prelude: TokenList(vec![TokenOrValue::Token(Token::String(
+            import_rule.url.to_string().into(),
+          ))]),
+          block: None,
+          loc: import_rule.loc,
+        });
       }
       _ => {}
     }
