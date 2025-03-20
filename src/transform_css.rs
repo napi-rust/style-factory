@@ -123,9 +123,11 @@ impl<'i> Visitor<'i> for MyVisitor {
       CssRule::Import(ref import_rule) => {
         *rule = CssRule::Unknown(UnknownAtRule {
           name: "import-style".into(),
-          prelude: TokenList(vec![TokenOrValue::Token(Token::String(
-            import_rule.url.to_string().into(),
-          ))]),
+          prelude: TokenList(vec![
+            TokenOrValue::Token(Token::ParenthesisBlock),
+            TokenOrValue::Token(Token::String(import_rule.url.to_string().into())),
+            TokenOrValue::Token(Token::CloseParenthesis),
+          ]),
           block: None,
           loc: import_rule.loc,
         });
@@ -247,7 +249,7 @@ mod tests {
   #[test]
   fn test_import() {
     let input = "@import url('./a.css');".to_string();
-    let expected = "@import \"./a.css\";".to_string();
+    let expected = "@import-style (\"./a.css\");".to_string();
     assert_eq!(transform_css(input).unwrap(), expected);
   }
 
