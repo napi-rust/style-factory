@@ -4,7 +4,6 @@
 extern crate napi_derive;
 
 mod css_to_code;
-mod printer_options;
 mod transform_css;
 
 use crate::css_to_code::{css_to_code, Css2CodeOptions};
