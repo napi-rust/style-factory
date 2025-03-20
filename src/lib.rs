@@ -9,6 +9,7 @@ use lightningcss::{
   selector::{Component, Selector, SelectorList},
   stylesheet::{MinifyOptions, ParserOptions, PrinterOptions, StyleSheet},
   targets::Browsers,
+  traits::ToCss,
   values::{ident::Ident, string::CSSString},
   visit_types,
   visitor::{Visit, VisitTypes, Visitor},
@@ -118,17 +119,20 @@ impl<'i> Visitor<'i> for MyVisitor {
     // rule_exit 时，处理一些特殊的选择器
     // 如果是一个独立 :host 选择器 则移除这条规则
     if let CssRule::Style(style) = rule {
-      let selectors: &SelectorList = &style.selectors;
-      let mut remove_rule = false;
+      let selectors: &mut SelectorList = &mut style.selectors;
+      let mut is_single_host = false;
       // 如果 SelectorList 只有一个选择器，并且这个选择器是 :host 则移除这条规则
-      if selectors.0.len() == 1 {
-        let selector = &selectors.0;
-        if selector.len() == 1 {
-          // println!("selector: {:?}", selector);
+      // .a, .b {} 不会被移除
+      if selectors.0.iter().count() == 1 {
+        let selector = &mut selectors.0[0];
+        if selector.iter().count() == 1 {
+          let selector_css_string = selector.to_css_string(PrinterOptions::default()).unwrap();
+          is_single_host = selector_css_string == "[is=\"__HOST__\"]";
         }
       }
-      if remove_rule {
-        // *rule = CssRule::NoOp;
+      if is_single_host {
+        // 修改为注释
+        *rule = CssRule::Ignored;
       }
     }
 
@@ -147,12 +151,6 @@ pub fn style_factory(css: String) -> String {
     chrome: Some(55),
     ..Browsers::default()
   };
-  let minify_options = MinifyOptions {
-    targets: targets.into(),
-    ..Default::default()
-  };
-
-  stylesheet.minify(minify_options).unwrap();
 
   let printer_options = PrinterOptions {
     minify: true,
@@ -233,7 +231,7 @@ mod tests {
   #[test]
   fn test_import() {
     let input = "@import url('./a.css');".to_string();
-    let expected = "@import-style url('./a.css');".to_string();
+    let expected = "@import \"./a.css\";".to_string();
     assert_eq!(style_factory(input), expected);
   }
 
