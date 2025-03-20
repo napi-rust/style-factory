@@ -1,12 +1,13 @@
+use indoc::{formatdoc, indoc};
 use lazy_regex::regex_replace_all;
 use md5::{Digest, Md5};
 use std::collections::HashMap;
 
 // ---- Core Logic ----
 #[derive(Debug, Clone)]
-pub struct Css2CodeOptions<'a> {
-  pub css: &'a str,
-  pub host_css: Option<&'a str>,
+pub struct Css2CodeOptions<'css_string> {
+  pub css: &'css_string str,
+  pub host_css: Option<&'css_string str>,
 }
 
 pub fn css_to_code(options: Css2CodeOptions<'_>) -> String {
@@ -67,14 +68,16 @@ fn generate_output(
   imports: &HashMap<String, String>,
 ) -> String {
   let host_code = if !host_css_code.is_empty() {
-    format!(
-      r#"var hostStyleText = "{host_css_code}";
-  if (options.hostStyle) {{
-      options.hostStyle(hostStyleText);
-  }} else {{
-      css = hostStyleText + css;
-  }}"#
-    )
+    formatdoc! {r#"
+      var hostStyleText = "{host_css_code}";
+      if (options.hostStyle) {{
+          options.hostStyle(hostStyleText);
+      }} else {{
+          css = hostStyleText + css;
+      }}"#, host_css_code = host_css_code
+    }
+    .trim()
+    .into()
   } else {
     String::new()
   };
@@ -85,21 +88,21 @@ fn generate_output(
     .collect::<Vec<_>>()
     .join("\n");
 
-  format!(
-    r#"{import_code}
-export default function styleFactory(options) {{
-  var prefix = options.prefix || '';
-  var tag = options.tag || (tag => tag);
-  var rpx = options.rpx;
-  var host = options.host || 'host-placeholder';
-  var css = "{css_code}";
-  {host_code}
-  return css;
-}}"#
-  )
+  formatdoc! {r#"
+    {import_code}
+    export default function styleFactory(options) {{
+      var prefix = options.prefix || '';
+      var tag = options.tag || (tag => tag);
+      var rpx = options.rpx;
+      var host = options.host || 'host-placeholder';
+      var css = "{css_code}";
+      {host_code}
+      return css;
+    }}
+  "#, import_code = import_code, css_code = css_code, host_code = host_code
+  }
   .trim()
-  .replace("{css_code}", css_code)
-  .replace("{host_css_code}", host_css_code)
+  .into()
 }
 
 // ---- 测试用例 ----
@@ -115,15 +118,40 @@ mod tests {
       host_css: None,
     };
     let output = css_to_code(options);
-    let expected = r#"export default function styleFactory(options) {
-  var prefix = options.prefix || '';
-  var tag = options.tag || (tag => tag);
-  var rpx = options.rpx;
-  var host = options.host || 'host-placeholder';
-  var css = "." + prefix + "a{width:" + rpx(100) + "px}." + prefix + "b{height:" + rpx(50) + "px}";
-  
-  return css;
-}"#;
+    let expected = indoc! {r#"
+      export default function styleFactory(options) {
+        var prefix = options.prefix || '';
+        var tag = options.tag || (tag => tag);
+        var rpx = options.rpx;
+        var host = options.host || 'host-placeholder';
+        var css = "." + prefix + "a{width:" + rpx(100) + "px}." + prefix + "b{height:" + rpx(50) + "px}";
+        
+        return css;
+      }"#
+    };
     assert_eq!(output.trim(), expected.trim());
+  }
+
+  #[test]
+  fn test_host_css() {
+    let input = r#"[is=__HOST__]{color:#fff}"#;
+    let options = Css2CodeOptions {
+      css: input,
+      host_css: None,
+    };
+    let output = css_to_code(options);
+    let expected = indoc! {r#"
+      export default function styleFactory(options) {
+        var prefix = options.prefix || '';
+        var tag = options.tag || (tag => tag);
+        var rpx = options.rpx;
+        var host = options.host || 'host-placeholder';
+        var css = "[is=" + host + "]{color:#fff}";
+        
+        return css;
+      }"#
+    };
+
+    assert_eq!(output.trim(), expected);
   }
 }

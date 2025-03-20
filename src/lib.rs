@@ -7,6 +7,7 @@ mod css_to_code;
 mod transform_css;
 
 use crate::css_to_code::{css_to_code, Css2CodeOptions};
+use indoc::indoc;
 use std::string::String;
 use transform_css::transform_css;
 
@@ -30,15 +31,17 @@ mod tests {
   fn test_style_factory() {
     let css_text = r#".a { color: red }"#.to_string();
     let res = style_factory(css_text.clone());
-    let expected = r#"export default function styleFactory(options) {
-  var prefix = options.prefix || '';
-  var tag = options.tag || (tag => tag);
-  var rpx = options.rpx;
-  var host = options.host || 'host-placeholder';
-  var css = "." + prefix + "a{color:red}";
-  
-  return css;
-}"#;
+    let expected = indoc! { r#"
+      export default function styleFactory(options) {
+        var prefix = options.prefix || '';
+        var tag = options.tag || (tag => tag);
+        var rpx = options.rpx;
+        var host = options.host || 'host-placeholder';
+        var css = "." + prefix + "a{color:red}";
+        
+        return css;
+      }"#
+    };
     assert!(res.is_ok());
     assert_eq!(res.unwrap(), expected);
   }
