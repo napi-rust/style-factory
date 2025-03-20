@@ -3,12 +3,13 @@
 #[macro_use]
 extern crate napi_derive;
 
+mod printer_options;
+
 use lightningcss::{
   properties::custom::{Token, TokenOrValue},
   rules::{import::ImportRule, CssRule},
   selector::{Component, Selector, SelectorList},
-  stylesheet::{ParserOptions, PrinterOptions, StyleSheet},
-  targets::{Browsers, Targets},
+  stylesheet::{ParserOptions, StyleSheet},
   traits::ToCss,
   values::{ident::Ident, string::CSSString},
   visit_types,
@@ -18,6 +19,7 @@ use parcel_selectors::{
   attr::{AttrSelectorOperator, ParsedCaseSensitivity},
   parser::LocalName,
 };
+use printer_options::get_printer_options;
 use std::convert::Infallible;
 use std::string::String;
 
@@ -107,14 +109,6 @@ impl<'i> Visitor<'i> for MyVisitor {
   }
 
   fn visit_rule(&mut self, rule: &mut CssRule<'i>) -> Result<(), Self::Error> {
-    let targets = Browsers {
-      safari: Some(11),
-      ios_saf: Some(11),
-      android: Some(6),
-      chrome: Some(55),
-      ..Browsers::default()
-    };
-
     match rule {
       CssRule::Import(ImportRule { url: _, .. }) => {
         // TODO
@@ -134,24 +128,12 @@ impl<'i> Visitor<'i> for MyVisitor {
       if selectors.0.iter().count() == 1 {
         let selector = &mut selectors.0[0];
         if selector.iter().count() == 1 {
-          let selector_css_string = selector
-            .to_css_string(PrinterOptions {
-              minify: true,
-              targets: Targets::from(targets),
-              ..Default::default()
-            })
-            .unwrap();
+          let selector_css_string = selector.to_css_string(get_printer_options()).unwrap();
           is_single_host = selector_css_string == "[is=__HOST__]";
         }
       }
       if is_single_host {
-        let rule_css_string = rule
-          .to_css_string(PrinterOptions {
-            minify: true,
-            targets: Targets::from(targets),
-            ..Default::default()
-          })
-          .unwrap();
+        let rule_css_string = rule.to_css_string(get_printer_options()).unwrap();
         println!("remove rule: {}", rule_css_string);
         // 修改为注释
         *rule = CssRule::Ignored;
@@ -166,23 +148,10 @@ impl<'i> Visitor<'i> for MyVisitor {
 pub fn style_factory(css: String) -> String {
   let mut stylesheet = StyleSheet::parse(&css, ParserOptions::default()).unwrap();
 
-  let targets = Browsers {
-    safari: Some(11),
-    ios_saf: Some(11),
-    android: Some(6),
-    chrome: Some(55),
-    ..Browsers::default()
-  };
-
-  let printer_options = PrinterOptions {
-    minify: true,
-    targets: Targets::from(targets),
-    ..Default::default()
-  };
-
   stylesheet.visit(&mut MyVisitor).unwrap();
 
-  let res: lightningcss::stylesheet::ToCssResult = stylesheet.to_css(printer_options).unwrap();
+  let res: lightningcss::stylesheet::ToCssResult =
+    stylesheet.to_css(get_printer_options()).unwrap();
 
   (res.code).to_string()
 }
