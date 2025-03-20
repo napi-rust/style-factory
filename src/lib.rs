@@ -133,8 +133,8 @@ impl<'i> Visitor<'i> for MyVisitor {
         }
       }
       if is_single_host {
-        let rule_css_string = rule.to_css_string(get_printer_options()).unwrap();
-        println!("remove rule: {}", rule_css_string);
+        // let rule_css_string = rule.to_css_string(get_printer_options()).unwrap();
+        // println!("remove rule: {}", rule_css_string);
         // 修改为注释
         *rule = CssRule::Ignored;
       }

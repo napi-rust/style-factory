@@ -1,0 +1,52 @@
+/* 注释 */
+.foo {
+  color: red;
+  height: 100rpx;
+}
+
+#id,
+.class {
+  color: red;
+}
+
+:host {
+  color: red;
+}
+
+.foo {
+  color: green;
+}
+
+.a .b {
+  color: red;
+}
+
+.a > .b {
+  color: red;
+}
+
+.a ~ .b {
+  color: red;
+}
+
+.a + .b {
+  color: red;
+}
+
+.a:after {
+  color: red;
+}
+
+:root {
+  --main-bg-color: #fefefe;
+  /* 浅色背景 */
+  --main-text-color: #363636;
+  /* 深色文字 */
+}
+
+:root[theme='dark'] {
+  --main-bg-color: #2f3a44;
+  /* 深色背景 */
+  --main-text-color: #c5c5c5;
+  /* 浅色文字 */
+}
