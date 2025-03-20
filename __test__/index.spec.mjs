@@ -3,14 +3,34 @@ import { describe, it, expect } from 'vitest';
 import { styleFactory } from '../index.js';
 
 describe('styleFactory', () => {
-  it('should return a string', () => {
-    const css = styleFactory(`body { color: #ff0000; }`);
-    expect(css).toMatchInlineSnapshot(`"[meta\\:tag=body]{color:red}"`);
+  it('should return rpx', () => {
+    const css = styleFactory(`body { height: 100rpx; }`);
+    expect(css).toMatchInlineSnapshot(`
+      "export default function styleFactory(options) {
+        var prefix = options.prefix || '';
+        var tag = options.tag || (tag => tag);
+        var rpx = options.rpx;
+        var host = options.host || 'host-placeholder';
+        var css = "[meta\\\\:tag=body]{height:" + rpx(100) + "px}";
+        
+        return css;
+      }"
+    `);
   });
 
   it('keyframe case', () => {
     const css = styleFactory(`@keyframes mymove { from { top: 0px; } to { top: 200px; } }`);
-    expect(css).toMatchInlineSnapshot(`"@keyframes mymove{0%{top:0}to{top:200px}}"`);
+    expect(css).toMatchInlineSnapshot(`
+      "export default function styleFactory(options) {
+        var prefix = options.prefix || '';
+        var tag = options.tag || (tag => tag);
+        var rpx = options.rpx;
+        var host = options.host || 'host-placeholder';
+        var css = "@keyframes mymove{0%{top:0}to{top:200px}}";
+        
+        return css;
+      }"
+    `);
   });
 
   it('throw error', () => {

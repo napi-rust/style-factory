@@ -7,6 +7,7 @@ mod css_to_code;
 mod printer_options;
 mod transform_css;
 
+use crate::css_to_code::{css_to_code, Css2CodeOptions};
 use std::string::String;
 use transform_css::transform_css;
 
@@ -14,7 +15,11 @@ use transform_css::transform_css;
 pub fn style_factory(css_text: String) -> Result<String, napi::Error> {
   let css = transform_css(css_text)
     .map_err(|e| napi::Error::from_reason(format!("Transform error: {}", e)))?;
-  Ok(css)
+  let css_code = css_to_code(Css2CodeOptions {
+    css: &css,
+    host_css: None,
+  });
+  Ok(css_code.unwrap())
 }
 
 #[cfg(test)]
@@ -25,7 +30,15 @@ mod tests {
   fn test_style_factory() {
     let css_text = r#".a { color: red }"#.to_string();
     let res = style_factory(css_text.clone());
-    let expected = r#".__PREFIX__a{color:red}"#;
+    let expected = r#"export default function styleFactory(options) {
+  var prefix = options.prefix || '';
+  var tag = options.tag || (tag => tag);
+  var rpx = options.rpx;
+  var host = options.host || 'host-placeholder';
+  var css = "." + prefix + "a{color:red}";
+  
+  return css;
+}"#;
     assert!(res.is_ok());
     assert_eq!(res.unwrap(), expected);
   }
