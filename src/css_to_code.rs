@@ -1,70 +1,38 @@
+use lazy_regex::{regex, Regex};
 use md5::{Digest, Md5};
-use once_cell::sync::Lazy;
-use regex::{Captures, Regex};
 use std::collections::HashMap;
-use std::error::Error;
 
-#[derive(Debug, Clone)]
-pub enum CssTransformError {
-  RegexError,
+// ---- Static Regex Patterns ----
+lazy_static::lazy_static! {
+  static ref PREFIX_REGEX: &'static Regex = regex!("__PREFIX__");
+  static ref HOST_REGEX: &'static Regex = regex!("__HOST__");
+  static ref RPX_REGEX: &'static Regex = regex!(r#"\\"__RPX__\(([^)]+)\)\\""#);
+  static ref IMPORT_REGEX: &'static Regex = regex!(r#"@import-style \("([^"]+)"\);"#);
 }
 
-impl std::fmt::Display for CssTransformError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "CSS Transform Error")
-  }
-}
-
-impl Error for CssTransformError {}
-
-// ---- 正则替换器 ----
-struct Replacers {
-  prefix: Regex,
-  host: Regex,
-  rpx: Regex,
-  import: Regex,
-}
-
-impl Replacers {
-  fn new() -> Result<Self, Box<dyn Error>> {
-    Ok(Self {
-      prefix: Regex::new(r"__PREFIX__")?,
-      host: Regex::new(r"__HOST__")?,
-      rpx: Regex::new(r#"\\"__RPX__\(([^)]+)\)\\""#)?,
-      import: Regex::new(r#"@import-style \("([^"]+)"\);"#)?,
-    })
-  }
-}
-
-static REPLACERS: Lazy<Result<Replacers, CssTransformError>> =
-  Lazy::new(|| Replacers::new().map_err(|_| CssTransformError::RegexError));
-
-// ---- 核心逻辑 ----
+// ---- Core Logic ----
 pub struct Css2CodeOptions<'a> {
   pub css: &'a str,
   pub host_css: Option<&'a str>,
 }
 
-pub fn css_to_code(options: Css2CodeOptions<'_>) -> Result<String, CssTransformError> {
-  let replacers = REPLACERS
-    .as_ref()
-    .map_err(|_| CssTransformError::RegexError)?;
+pub fn css_to_code(options: Css2CodeOptions<'_>) -> String {
   let mut imports = HashMap::new();
 
-  // 处理主 CSS
-  let css_code = process_text(options.css, replacers, Some(&mut imports))?;
+  // Process main CSS
+  let css_code = process_text(options.css, Some(&mut imports));
 
-  // 处理 Host CSS
+  // Process Host CSS
   let host_css_code = if let Some(hc) = options.host_css {
-    process_text(hc, replacers, None)?
+    process_text(hc, None)
   } else {
     String::new()
   };
 
-  Ok(generate_output(&css_code, &host_css_code, &imports))
+  generate_output(&css_code, &host_css_code, &imports)
 }
 
-// ---- 私有辅助函数 ----
+// ---- Private Helper Functions ----
 fn md5_hash(input: &str) -> String {
   let mut hasher = Md5::new();
   hasher.update(input.as_bytes());
@@ -77,31 +45,33 @@ fn json_escape(s: &str) -> String {
     .replace('\n', r"\n")
 }
 
-fn process_text(
-  text: &str,
-  replacers: &Replacers,
-  mut imports: Option<&mut HashMap<String, String>>,
-) -> Result<String, CssTransformError> {
+fn process_text(text: &str, mut imports: Option<&mut HashMap<String, String>>) -> String {
   let escaped = json_escape(text);
 
-  let replaced = replacers.prefix.replace_all(&escaped, r#"" + prefix + ""#);
-  let replaced = replacers.host.replace_all(&replaced, r#"" + host + ""#);
-  let replaced = replacers.rpx.replace_all(&replaced, |caps: &Captures| {
+  let replaced = PREFIX_REGEX
+    .replace_all(&escaped, |_: &regex::Captures| "\" + prefix + \"")
+    .to_string();
+  let replaced = HOST_REGEX
+    .replace_all(&replaced, |_: &regex::Captures| "\" + host + \"")
+    .to_string();
+  let replaced = RPX_REGEX.replace_all(&replaced, |caps: &regex::Captures| {
     format!(r#"" + rpx({}) + "px"#, &caps[1])
   });
 
   let replaced = if let Some(imports) = &mut imports {
-    replacers.import.replace_all(&replaced, |caps: &Captures| {
-      let url = caps.get(1).unwrap().as_str();
-      let fn_name = format!("I_{}", md5_hash(url));
-      imports.insert(url.to_string(), fn_name.clone());
-      format!(r#"" + {}(options) + ""#, fn_name)
-    })
+    IMPORT_REGEX
+      .replace_all(&replaced, |caps: &regex::Captures| {
+        let url = caps[1].to_string();
+        let fn_name = format!("I_{}", md5_hash(url.as_str()));
+        imports.insert(url.to_string(), fn_name.clone());
+        format!(r#"" + {}(options) + ""#, fn_name)
+      })
+      .to_string()
   } else {
-    replaced
+    replaced.to_string()
   };
 
-  Ok(replaced.into_owned())
+  replaced
 }
 
 fn generate_output(
@@ -157,7 +127,7 @@ mod tests {
       css: input,
       host_css: None,
     };
-    let output = css_to_code(options).unwrap();
+    let output = css_to_code(options);
     let expected = r#"export default function styleFactory(options) {
   var prefix = options.prefix || '';
   var tag = options.tag || (tag => tag);

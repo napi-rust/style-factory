@@ -14,11 +14,12 @@ use transform_css::transform_css;
 pub fn style_factory(css_text: String) -> Result<String, napi::Error> {
   let css = transform_css(css_text)
     .map_err(|e| napi::Error::from_reason(format!("Transform error: {}", e)))?;
+
   let css_code = css_to_code(Css2CodeOptions {
     css: &css,
     host_css: None,
   });
-  Ok(css_code.unwrap())
+  Ok(css_code)
 }
 
 #[cfg(test)]
