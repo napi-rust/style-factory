@@ -8,13 +8,13 @@ export default function styleFactory(options) {
   var rpx = options.rpx;
   var host = options.host || 'host-placeholder';
   var css = [
-    'unsupport-star',
+    'unsupported-star',
     '{padding:0}',
     '[meta\\:tag=page]',
-    ', .',
+    '{color:red}.',
     prefix,
     'abc ',
-    'unsupport-star',
+    'unsupported-star',
     '{color:red}',
   ].join('');
 

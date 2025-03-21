@@ -1,5 +1,6 @@
+/* 2025/3/22 17:58:52 */
 @supports (display: flex) {
-  @media screen and (width>=900px) {
+  @media screen and (min-width: 900px) {
     .article {
       display: flex;
     }

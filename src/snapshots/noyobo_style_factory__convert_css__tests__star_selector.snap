@@ -1,0 +1,5 @@
+---
+source: src/convert_css.rs
+expression: result.unwrap().css
+---
+unsupported-star{color:#000}.__PREFIX__a unsupported-star{height:100px}

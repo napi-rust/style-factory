@@ -8,7 +8,7 @@ export default function styleFactory(options) {
   var rpx = options.rpx;
   var host = options.host || 'host-placeholder';
   var css = [
-    '@keyframes slidein{0%{transform:translate(0%)}to{transform:translate(100%)}}',
+    '@keyframes slidein{from{transform:translateX(0%)}to{transform:translateX(100%)}}',
   ].join('');
 
   return css;

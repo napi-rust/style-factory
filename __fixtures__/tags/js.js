@@ -11,9 +11,9 @@ export default function styleFactory(options) {
     '[meta\\:tag=view]',
     ' + ',
     '[meta\\:tag=button]',
-    ', ',
-    'unsupport-web-view',
-    ', ',
+    '{color:#363636}',
+    'unsupported-web-view',
+    '{color:#363636}',
     '[meta\\:tag=button]',
     '{color:#363636}',
   ].join('');

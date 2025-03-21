@@ -1,5 +1,0 @@
----
-source: src/transform_css.rs
-expression: result_unwrapped.css
----
-:any(.h5-article) :any(.h5-article) :any(.h5-article) .__PREFIX__sf-h5-h1{-webkit-margin-before:1.33em;-webkit-margin-after:1.33em;margin-top:1.33em;margin-bottom:1.33em;font-size:1em}

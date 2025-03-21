@@ -1,8 +1,10 @@
+/* 2025/3/22 17:58:52 */
 @keyframes slidein {
-  0% {
-    transform: translate(0%);
+  from {
+    transform: translateX(0%);
   }
+
   to {
-    transform: translate(100%);
+    transform: translateX(100%);
   }
 }

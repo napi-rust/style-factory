@@ -12,11 +12,11 @@ export default function styleFactory(options) {
     prefix,
     'ty-scroll-view-loading-black .',
     prefix,
-    'ty-scroll-view-dot:first-child, .',
+    'ty-scroll-view-dot:nth-child(1), .',
     prefix,
     'ty-scroll-view-loading-white .',
     prefix,
-    'ty-scroll-view-dot:first-child{animation:.9s infinite ty-scroll-view-keyframes}.',
+    'ty-scroll-view-dot:nth-child(1){animation:ty-scroll-view-keyframes 0.9s infinite}.',
     prefix,
     'ty-scroll-view-loading-black .',
     prefix,
@@ -24,7 +24,7 @@ export default function styleFactory(options) {
     prefix,
     'ty-scroll-view-loading-white .',
     prefix,
-    'ty-scroll-view-dot:nth-child(2){animation:.9s .3s infinite ty-scroll-view-keyframes}.',
+    'ty-scroll-view-dot:nth-child(2){animation:ty-scroll-view-keyframes 0.9s 0.3s infinite}.',
     prefix,
     'ty-scroll-view-loading-black .',
     prefix,
@@ -32,7 +32,7 @@ export default function styleFactory(options) {
     prefix,
     'ty-scroll-view-loading-white .',
     prefix,
-    'ty-scroll-view-dot:nth-child(3){animation:.9s .6s infinite ty-scroll-view-keyframes}',
+    'ty-scroll-view-dot:nth-child(3){animation:ty-scroll-view-keyframes 0.9s 0.6s infinite}',
   ].join('');
 
   return css;

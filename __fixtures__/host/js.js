@@ -20,7 +20,9 @@ export default function styleFactory(options) {
     "[is='" + host + "']",
     '{color:red;width:',
     rpx(100) + 'px',
-    ';font-size:10px}',
+    '}',
+    "[is='" + host + "']",
+    '{font-size:10px}',
   ].join('');
   if (options.hostStyle) {
     options.hostStyle(hostStyleText);

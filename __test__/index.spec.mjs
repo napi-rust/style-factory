@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { styleFactory } from '../index.js';
 
@@ -43,6 +43,28 @@ describe('styleFactory', () => {
         var rpx = options.rpx;
         var host = options.host || 'host-placeholder';
         var css = ["" , I_1568b90116e4f2a5d70b882f42df82dd(options) , "", ""].join("");
+        
+        return css;
+      }"
+    `);
+  });
+
+  it('should autoprefixer', () => {
+    const css = `
+    .container {
+      display: flex;
+      backdrop-filter: blur(5px);
+      user-select: none;
+    }
+    `;
+    const result = styleFactory(css, { autoprefixer: true });
+    expect(result).toMatchInlineSnapshot(`
+      "export default function styleFactory(options) {
+        var prefix = options.prefix || '';
+        var tag = options.tag || function (tag) { return tag; };
+        var rpx = options.rpx;
+        var host = options.host || 'host-placeholder';
+        var css = ["." , prefix , "container{-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);-webkit-user-select:none;user-select:none;display:flex}", ""].join("");
         
         return css;
       }"

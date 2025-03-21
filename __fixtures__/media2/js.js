@@ -8,7 +8,7 @@ export default function styleFactory(options) {
   var rpx = options.rpx;
   var host = options.host || 'host-placeholder';
   var css = [
-    '@supports (display:flex){@media screen and (width>=900px){.',
+    '@supports (display: flex){@media screen and (min-width: 900px){.',
     prefix,
     'article{display:flex}}}',
   ].join('');

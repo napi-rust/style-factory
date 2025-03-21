@@ -1,5 +1,0 @@
----
-source: src/convert_token.rs
-expression: result.unwrap().css
----
-.__PREFIX__a:is(.__PREFIX__b,.__PREFIX__c){height:calc("__RPX__(50)" - var(--abc,"__RPX__(100)"))}

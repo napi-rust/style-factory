@@ -14,9 +14,7 @@ export default function styleFactory(options) {
     rpx(100),
     'px}#id,.',
     prefix,
-    'class,[is=',
-    host,
-    ']{color:red}.',
+    'class{color:red}.',
     prefix,
     'foo{color:green}.',
     prefix,
@@ -39,6 +37,11 @@ export default function styleFactory(options) {
     'a:after{color:red}[theme=light]{--main-bg-color:#fefefe;--main-text-color:#363636}[theme=dark]{--main-bg-color:#2f3a44;--main-text-color:#c5c5c5}',
     '',
   ].join('');
-
+  var hostStyleText = ['[is=', host, ']{color:red}', ''].join('');
+  if (options.hostStyle) {
+    options.hostStyle(hostStyleText);
+  } else {
+    css = hostStyleText + css;
+  }
   return css;
 }

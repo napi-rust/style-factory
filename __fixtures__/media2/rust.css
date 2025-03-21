@@ -1,7 +1,0 @@
-@supports (display: flex) {
-  @media screen and (width>=900px) {
-    .sf-article {
-      display: flex;
-    }
-  }
-}

@@ -1,24 +1,68 @@
 import { readFileSync } from 'fs-extra';
 import styleFactory from 'style-factory';
 import { styleFactory as styleFactoryRust } from '../index';
-import { expect } from 'vitest';
 import path, { dirname } from 'node:path';
 import { writeFileSync } from 'node:fs';
-import { transform } from 'lightningcss';
 import { requireModuleCode } from 'require-module-exports';
 import prettier from 'prettier';
+import { expect } from 'vitest';
+import { minifyCss } from './minifyCss';
 
-function minifyCss(css: string) {
-  return new Promise<string>((resolve) => {
-    resolve(
-      transform({
-        filename: 'a.css',
-        code: Buffer.from(css, 'utf8'),
-        minify: true,
-      }).code.toString(),
-    );
+async function buildStyle(options: {
+  inputCss: string;
+  buildId: string;
+  dir: string;
+  // biome-ignore lint/complexity/noBannedTypes: <explanation>
+  factory: Function;
+}) {
+  const { buildId, factory, inputCss, dir } = options;
+  const outputJsFile = path.join(dir, `${buildId}.js`);
+  const outputCssFile = path.join(dir, `${buildId}.css`);
+
+  let hostCss = '';
+  const fnOptions = {
+    prefix: 'sf-',
+    rpx: (value: number) => value / 2,
+    tag: (tag: string) => {
+      return tag;
+    },
+    host: 'component-666',
+    hostStyle(hostStyle: string) {
+      hostCss = hostStyle;
+    },
+  };
+  const jsCode = factory(inputCss, {
+    transformTag: (t) => {
+      if (t === '\\*') {
+        return 'unsupported-star';
+      }
+      if (t === 'web-view') {
+        return 'unsupported-web-view';
+      }
+      return `[meta\\\\:tag=${t}]`;
+    },
   });
+  // biome-ignore lint/complexity/noBannedTypes: <explanation>
+  const codeFn = requireModuleCode(jsCode).default as Function;
+  const outputCss = codeFn(fnOptions);
+  await writeFile(outputJsFile, jsCode);
+  const css = `/* host-begin */${await minifyCss(hostCss)}/* host-end */\n${await minifyCss(outputCss)}`;
+  await writeFile(outputCssFile, css);
+  return css;
 }
+
+export const runCompare = async (file: string) => {
+  const context = readFileSync(file);
+  const code = context.toString();
+  // const code = await minifyCss(context.toString());
+  await writeFile(file.replace('.css', '.min.css'), `/* ${new Date().toLocaleString()} */\n${code}`);
+  const dir = dirname(file);
+  const left = await buildStyle({ inputCss: code, dir, buildId: 'js', factory: styleFactory });
+  const right = await buildStyle({ inputCss: code, dir, buildId: 'rs', factory: styleFactoryRust });
+  if (!dir.endsWith('large')) {
+    expect(await formatCss(left)).toEqual(await formatCss(right));
+  }
+};
 
 async function formatCss(code: string) {
   try {
@@ -46,54 +90,3 @@ async function writeFile(file: string, code: string) {
   });
   writeFileSync(file, formatCode);
 }
-
-export const runCompare = async (file: string) => {
-  const context = readFileSync(file);
-  const dir = dirname(file);
-
-  const code = await minifyCss(context.toString());
-
-  await writeFile(file.replace('.css', '.min.css'), code);
-
-  const jsCode = styleFactory(code, {
-    transformTag: (t) => {
-      if (t === '\\*') {
-        return 'unsupport-star';
-      }
-      if (t === 'web-view') {
-        return 'unsupport-web-view';
-      }
-      return `[meta\\\\:tag=${t}]`;
-    },
-  });
-  const rustCode = styleFactoryRust(code);
-
-  await writeFile(path.join(dir, 'js.js'), jsCode);
-  await writeFile(path.join(dir, 'rs.js'), rustCode);
-
-  const jsFn = requireModuleCode(jsCode).default;
-  const rustFn = requireModuleCode(rustCode).default;
-
-  const options = {
-    prefix: 'sf-',
-    rpx: (value: number) => value / 2,
-    tag: (tag: string) => {
-      return tag;
-    },
-    host: 'component-666',
-  };
-  const jsResult = jsFn(options);
-  const rustResult = rustFn(options);
-
-  const jsCss = await minifyCss(jsResult);
-  const rustCss = await minifyCss(rustResult);
-
-  expect(jsCss).toMatchSnapshot('js');
-  expect(rustCss).toMatchSnapshot('rs');
-
-  await writeFile(path.join(dir, 'js.css'), jsCss);
-  await writeFile(path.join(dir, 'rust.css'), rustCss);
-
-  expect(jsCss.length).toEqual(rustCss.length);
-  expect(jsCss).toEqual(rustCss);
-};

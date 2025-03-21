@@ -1,0 +1,5 @@
+---
+source: src/convert_css.rs
+expression: result_unwrapped.host_css.unwrap_or_default()
+---
+[is=__HOST__]{color:#000}
