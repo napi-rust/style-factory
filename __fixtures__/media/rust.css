@@ -1,0 +1,5 @@
+@media screen and (width>=900px) {
+  .sf-article {
+    padding: 1rem 3rem;
+  }
+}

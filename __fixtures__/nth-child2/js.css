@@ -1,0 +1,12 @@
+.sf-ty-scroll-view-loading-black .sf-ty-scroll-view-dot:first-child,
+.sf-ty-scroll-view-loading-white .sf-ty-scroll-view-dot:first-child {
+  animation: 0.9s infinite ty-scroll-view-keyframes;
+}
+.sf-ty-scroll-view-loading-black .sf-ty-scroll-view-dot:nth-child(2),
+.sf-ty-scroll-view-loading-white .sf-ty-scroll-view-dot:nth-child(2) {
+  animation: 0.9s 0.3s infinite ty-scroll-view-keyframes;
+}
+.sf-ty-scroll-view-loading-black .sf-ty-scroll-view-dot:nth-child(3),
+.sf-ty-scroll-view-loading-white .sf-ty-scroll-view-dot:nth-child(3) {
+  animation: 0.9s 0.6s infinite ty-scroll-view-keyframes;
+}

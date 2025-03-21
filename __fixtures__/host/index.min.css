@@ -1,0 +1,8 @@
+:host {
+  color: red;
+  width: 100rpx;
+  font-size: 10px;
+}
+.a :host {
+  height: 100rpx;
+}

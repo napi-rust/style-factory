@@ -1,0 +1,27 @@
+.sf-foo {
+  color: red;
+  height: 50px;
+}
+#id,
+.sf-class,
+[is='component-666'] {
+  color: red;
+}
+.sf-foo {
+  color: green;
+}
+.sf-a .sf-b,
+.sf-a > .sf-b,
+.sf-a ~ .sf-b,
+.sf-a + .sf-b,
+.sf-a:after {
+  color: red;
+}
+[theme='light'] {
+  --main-bg-color: #fefefe;
+  --main-text-color: #363636;
+}
+[theme='dark'] {
+  --main-bg-color: #2f3a44;
+  --main-text-color: #c5c5c5;
+}

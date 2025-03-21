@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { runCompare } from './runCompare';
-
+import pkg from 'style-factory/package.json';
 vi.setConfig({
   testTimeout: 20_000,
 });
@@ -22,16 +22,16 @@ const cases = fs
     return true;
   });
 
-const ignore = ['import', 'import2', 'large'];
+const ignore = ['import', 'import2'];
 
 for (const f of cases) {
   if (ignore.includes(f)) {
     continue;
   }
   const cssFile = path.join(fixtures, f, 'index.css');
-  describe(`runCompile ${f}`, async () => {
+  describe(`style-factory ${pkg.version} vs rust : ${f}`, async () => {
     it('style-factory', async () => {
-      runCompare(cssFile);
+      await runCompare(cssFile);
     });
   });
 }
