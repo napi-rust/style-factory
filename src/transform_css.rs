@@ -5,7 +5,6 @@ use lightningcss::{
   stylesheet::{ParserOptions, StyleSheet},
   traits::ToCss,
   values::{ident::Ident, string::CSSString},
-  visit_types,
   visitor::{Visit, VisitTypes, Visitor},
 };
 
@@ -33,33 +32,15 @@ fn get_printer_options<'a>() -> PrinterOptions<'a> {
   };
 }
 
-struct MyVisitor;
+struct FactoryVisitor {
+  types: VisitTypes,
+}
 
-impl<'i> Visitor<'i> for MyVisitor {
+impl<'i> Visitor<'i> for FactoryVisitor {
   type Error = Box<dyn Error>;
 
   fn visit_types(&self) -> VisitTypes {
-    visit_types!(
-      RULES
-        | PROPERTIES
-        | URLS
-        | COLORS
-        | IMAGES
-        | LENGTHS
-        | ANGLES
-        | RATIOS
-        | RESOLUTIONS
-        | TIMES
-        | CUSTOM_IDENTS
-        | DASHED_IDENTS
-        | VARIABLES
-        | ENVIRONMENT_VARIABLES
-        | MEDIA_QUERIES
-        | SUPPORTS_CONDITIONS
-        | SELECTORS
-        | FUNCTIONS
-        | TOKENS
-    )
+    self.types
   }
 
   fn visit_token(&mut self, token: &mut TokenOrValue<'i>) -> Result<(), Self::Error> {
@@ -87,34 +68,17 @@ impl<'i> Visitor<'i> for MyVisitor {
     Ok(())
   }
 
-  // fn visit_declaration_block(
-  //   &mut self,
-  //   decls: &mut lightningcss::declaration::DeclarationBlock<'i>,
-  // ) -> Result<(), Self::Error> {
-  //   println!("decls: {:?}", decls);
-  //   decls.visit_children(self)?;
-  //   Ok(())
-  // }
-
-  // fn visit_property(
-  //   &mut self,
-  //   property: &mut lightningcss::properties::Property<'i>,
-  // ) -> Result<(), Self::Error> {
-  //   println!("property: {:?}", property);
-  //   // property.visit_children(self)?;
-  //   Ok(())
-  // }
-
   fn visit_function(&mut self, function: &mut Function<'i>) -> Result<(), Self::Error> {
-    let args = &mut function.arguments;
-    args.visit_children(self)?;
+    let token_list = &mut function.arguments;
+    token_list.visit_children(self)?;
     Ok(())
   }
 
   fn visit_token_list(&mut self, tokens: &mut TokenList<'i>) -> Result<(), Self::Error> {
-    // println!("tokens: {:?}", tokens);
-    for token in tokens.0.iter_mut() {
-      token.visit_children(self)?;
+    if self.types.contains(VisitTypes::TOKENS) {
+      for token in &mut tokens.0 {
+        token.visit_children(self)?;
+      }
     }
     tokens.visit_children(self)?;
     Ok(())
@@ -167,7 +131,9 @@ impl<'i> Visitor<'i> for MyVisitor {
             self.visit_selector(sub_selector)?;
           }
         }
-        _ => {}
+        _ => {
+          // 其他选择器不做处理
+        }
       }
     }
 
@@ -189,10 +155,11 @@ impl<'i> Visitor<'i> for MyVisitor {
           loc: import_rule.loc,
         });
       }
-      _ => {}
+      _ => {
+        // 确保其他规则也能被访问
+        rule.visit_children(self)?;
+      }
     }
-    // 确保其他规则也能被访问
-    rule.visit_children(self)?;
 
     // println!("rule: {:?}", rule);
 
@@ -219,14 +186,22 @@ impl<'i> Visitor<'i> for MyVisitor {
   }
 }
 
-pub fn transform_css(css: String) -> Result<String, Box<dyn Error>> {
+#[derive(Debug)]
+pub struct TransformReturn {
+  pub css: String,
+  pub host_css: Option<String>,
+}
+
+pub fn transform_css(css: String) -> Result<TransformReturn, Box<dyn Error>> {
   // 1. 解析 CSS（处理解析错误）
   let mut stylesheet =
     StyleSheet::parse(&css, ParserOptions::default()).map_err(|e| format!("Parse error: {}", e))?;
 
   // 2. 遍历规则（处理访问错误）
   stylesheet
-    .visit(&mut MyVisitor)
+    .visit(&mut FactoryVisitor {
+      types: VisitTypes::all(),
+    })
     .map_err(|e| format!("Visit error: {}", e))?;
 
   // 3. 生成 CSS（处理序列化错误）
@@ -235,7 +210,10 @@ pub fn transform_css(css: String) -> Result<String, Box<dyn Error>> {
     .map_err(|e| format!("Serialize error: {}", e))?;
 
   // 4. 返回成功结果
-  Ok(res.code.to_string())
+  Ok(TransformReturn {
+    css: res.code,
+    host_css: None,
+  })
 }
 
 #[cfg(test)]
@@ -246,13 +224,20 @@ mod tests {
 
   #[test]
   fn test_transform_css_basic() {
-    let input = ".body .h1 { 
-    color: #ffffff; 
-    height: 10px; 
-    width: 100rpx;
-    }"
-    .to_string();
-    assert_snapshot!(transform_css(input).unwrap());
+    let input = indoc! {r#"
+      .body .h1 { 
+        --width: 100rpx;
+        color: #ffffff; 
+        height: -20rpx; 
+        width: var(--width, 200rpx);
+        transform: translateX(100rpx);
+        calc: calc(100rpx+ -100rpx);
+      }
+    "#
+    };
+
+    let result = transform_css(input.to_string());
+    assert_snapshot!(result.unwrap().css);
   }
 
   #[test]
@@ -261,49 +246,56 @@ mod tests {
   color: red;
 }"
     .to_string();
-    assert_snapshot!(transform_css(input).unwrap());
+    assert_snapshot!(transform_css(input).unwrap().css);
   }
 
   #[test]
   fn test_is_selector() {
     let input = ".a:is(.b, .c) { height: calc(50rpx - var(--abc, 100rpx)); }".to_string();
-    assert_snapshot!(transform_css(input).unwrap());
+    let result = transform_css(input.to_string());
+    assert_snapshot!(result.unwrap().css);
   }
 
   #[test]
   fn test_where_selector() {
     let input = ".a:where(.b, .c) { color: green; }".to_string();
-    assert_snapshot!(transform_css(input).unwrap());
+    let result = transform_css(input.to_string());
+    assert_snapshot!(result.unwrap().css);
   }
 
   #[test]
   fn test_has_selector() {
     let input = ".a:has(.b) { color: purple; }".to_string();
-    assert_snapshot!(transform_css(input).unwrap(),);
+    let result = transform_css(input.to_string());
+    assert_snapshot!(result.unwrap().css);
   }
 
   #[test]
   fn test_star_selector() {
     let input = "* { color: black; } .a * {height: 100px;}".to_string();
-    assert_snapshot!(transform_css(input).unwrap(),);
+    let result = transform_css(input.to_string());
+    assert_snapshot!(result.unwrap().css);
   }
 
   #[test]
   fn test_host_selector() {
     let input = ".a :host { color: black; }".to_string();
-    assert_snapshot!(transform_css(input).unwrap());
+    let result = transform_css(input.to_string());
+    assert_snapshot!(result.unwrap().css);
   }
 
   #[test]
   fn test_import() {
     let input = "@import url('./a.css');".to_string();
-    assert_snapshot!(transform_css(input).unwrap());
+    let result = transform_css(input.to_string());
+    assert_snapshot!(result.unwrap().css);
   }
 
   #[test]
   fn test_remove_single_host() {
     let input = ":host { color: black; }".to_string();
-    assert_snapshot!(transform_css(input).unwrap());
+    let result = transform_css(input.to_string());
+    assert_snapshot!(result.unwrap().css);
   }
 
   #[test]
@@ -312,12 +304,14 @@ mod tests {
       @-webkit-keyframes anim-show {
         100% {
           opacity: 1;
+          width: 30rpx
         }
       }
 
       @keyframes anim-show {
         100% {
           opacity: 1;
+          height: -30rpx
         }
       }
 
@@ -336,7 +330,28 @@ mod tests {
     }
     .to_string();
 
-    assert_snapshot!(transform_css(input).unwrap());
+    let result = transform_css(input.to_string());
+    assert_snapshot!(result.unwrap().css);
+  }
+
+  #[test]
+  // 不支持 media query 进行 rpx 设置会报错
+  fn test_media_query() {
+    let input = indoc! {r#"
+    @media screen and (max-width: 600rpx) {
+      .responsive {
+        font-size: 24rpx;
+      }
+    }
+  "#}
+    .to_string();
+    let result = transform_css(input);
+    match result {
+      Ok(_) => panic!("Expected an error, but got Ok"),
+      Err(e) => {
+        assert_snapshot!(e.to_string());
+      }
+    }
   }
 
   #[test]

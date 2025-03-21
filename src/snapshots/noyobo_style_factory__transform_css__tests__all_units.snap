@@ -1,0 +1,5 @@
+---
+source: src/transform_css.rs
+expression: transform_css(input).unwrap()
+---
+:root{--default-size:"__RPX__(100)"}.__PREFIX__test{margin:"__RPX__(100)";padding:"__RPX__(100)";border-width:"__RPX__(20)";width:"__RPX__(1000)";height:"__RPX__(500)";max-width:"__RPX__(3000)";min-width:"__RPX__(500)";max-height:"__RPX__(5000)";min-height:"__RPX__(500)";top:"__RPX__(50)";left:"__RPX__(50)";right:"__RPX__(50)";bottom:"__RPX__(50)";font-size:"__RPX__(160)";letter-spacing:"__RPX__(10)";line-height:"__RPX__(240)";word-spacing:"__RPX__(20)";outline-width:"__RPX__(20)";box-shadow:"__RPX__(0)" "__RPX__(40)" "__RPX__(200)" rgba(0,0,0,.25);text-shadow:"__RPX__(10)" "__RPX__(10)" "__RPX__(20)" #000;transform:translateX("__RPX__(100)")translateY("__RPX__(200)");gap:"__RPX__(100)";row-gap:"__RPX__(50)";column-gap:"__RPX__(50)";perspective:"__RPX__(5000)";width:calc("__RPX__(1000)" - "__RPX__(200)");height:var(--default-size,"__RPX__(500)");list-style-position:outside;text-indent:"__RPX__(100)";object-position:"__RPX__(100)" "__RPX__(100)";background-position:"__RPX__(0)" "__RPX__(0)"}
