@@ -21,8 +21,24 @@ permissions:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
 jobs:
+  check_commit_message:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.check.outputs.should_build }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Check commit message
+        id: check
+        run: |
+          if [[ "${{ github.event.head_commit.message }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            echo "should_build=true" >> $GITHUB_ENV
+          else
+            echo "should_build=false" >> $GITHUB_ENV
+          fi
+        shell: bash
   build:
-    if: github.event.pull_request.draft == false
+    if: needs.check_commit_message.outputs.should_build == 'true'
     strategy:
       fail-fast: false
       matrix:
