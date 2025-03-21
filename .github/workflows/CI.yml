@@ -32,8 +32,10 @@ jobs:
         id: check
         run: |
           if [[ "${{ github.event.head_commit.message }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            echo "It's a release commit, will build and publish"
             echo "should_build=true" >> $GITHUB_ENV
           else
+            echo "It's not a release commit, will not build and publish"
             echo "should_build=false" >> $GITHUB_ENV
           fi
         shell: bash
