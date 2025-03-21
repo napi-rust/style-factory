@@ -50,14 +50,14 @@ fn process_text(text: &str, imports: Option<&Mutex<HashMap<String, String>>>) ->
   let mut result = json_escape(text);
 
   result = PREFIX_REGEX
-    .replace_all(&result, r#"" + prefix + ""#)
+    .replace_all(&result, r#"" , prefix , ""#)
     .into_owned();
   result = HOST_REGEX
-    .replace_all(&result, r#"" + host + ""#)
+    .replace_all(&result, r#"" , host , ""#)
     .into_owned();
   result = RPX_REGEX
     .replace_all(&result, |caps: &Captures<'_>| {
-      format!(r#"" + rpx({}) + "px"#, &caps[1])
+      format!(r#"" , rpx({}) , "px"#, &caps[1])
     })
     .into_owned();
 
@@ -70,7 +70,7 @@ fn process_text(text: &str, imports: Option<&Mutex<HashMap<String, String>>>) ->
           .lock()
           .unwrap()
           .insert(url.to_string(), fn_name.clone());
-        format!(r#"" + {}(options) + ""#, fn_name)
+        format!(r#"" , {}(options) , ""#, fn_name)
       })
       .into_owned();
   }
@@ -85,7 +85,7 @@ fn generate_output(
 ) -> String {
   let host_code = if !host_css_code.is_empty() {
     formatdoc! {r#"
-      var hostStyleText = "{host_css_code}";
+      var hostStyleText = ["{host_css_code}", ""].join("");
       if (options.hostStyle) {{
           options.hostStyle(hostStyleText);
       }} else {{
@@ -111,7 +111,7 @@ fn generate_output(
       var tag = options.tag || function (tag) {{ return tag; }};
       var rpx = options.rpx;
       var host = options.host || 'host-placeholder';
-      var css = "{css_code}";
+      var css = ["{css_code}", ""].join("");
       {host_code}
       return css;
     }}
@@ -128,11 +128,24 @@ mod tests {
   use insta::assert_snapshot;
 
   #[test]
-  fn test_tow_prefix() {
-    let input = r#".__PREFIX__a{width:"__RPX__(100)"}.__PREFIX__b{height:"__RPX__(50)"}"#;
+  fn test_keep_is_prefix() {
+    let css = r#".__PREFIX__h5-blockquote:not(:is(:lang(ae),:lang(yi))){margin-left:"__RPX__(40)";margin-right:"__RPX__(40)"}"#;
     let options = Css2CodeOptions {
-      css: input,
+      css,
       host_css: None,
+    };
+    let output = css_to_code(options);
+
+    assert_snapshot!(output.trim());
+  }
+
+  #[test]
+  fn test_tow_prefix() {
+    let css = r#".__PREFIX__a{width:"__RPX__(100)"}.__PREFIX__b{height:"__RPX__(50)"}"#;
+    let host_css = r#"[is=__HOST__]{color:#000;width:"__RPX__(100)";height:"__RPX__(20)"}"#;
+    let options = Css2CodeOptions {
+      css,
+      host_css: Some(host_css),
     };
     let output = css_to_code(options);
 

@@ -87,55 +87,60 @@ impl<'i> Visitor<'i> for FactoryVisitor {
 
   fn visit_selector(&mut self, selector: &mut Selector<'i>) -> Result<(), Self::Error> {
     // 修改 selector 的样式名, 添加一个 __PREFIX__ 前缀
-    for component in &mut selector.iter_mut_raw_match_order() {
-      match component {
-        // 将类名替换成 __PREFIX__ 类名
-        Component::Class(class) => {
-          *class = format!("__PREFIX__{}", class).into();
-        }
+    if self.types.contains(VisitTypes::SELECTORS) {
+      for component in &mut selector.iter_mut_raw_match_order() {
+        match component {
+          // 将类名替换成 __PREFIX__ 类名
+          Component::Class(class) => {
+            *class = format!("__PREFIX__{}", class).into();
+          }
 
-        // 处理 * 选择器 * => unsupport-star
-        Component::ExplicitUniversalType => {
-          *component = Component::LocalName(LocalName {
-            name: "unsupport-star".into(),
-            lower_name: "unsupport-star".into(),
-          });
-        }
+          // 处理 * 选择器 * => unsupport-star
+          Component::ExplicitUniversalType => {
+            *component = Component::LocalName(LocalName {
+              name: "unsupport-star".into(),
+              lower_name: "unsupport-star".into(),
+            });
+          }
 
-        // 处理 :host 选择器 :host => [is=__HOST__]
-        Component::Host(_host) => {
-          *component = Component::AttributeInNoNamespace {
-            local_name: Ident::from("is"),
-            operator: AttrSelectorOperator::Equal,
-            value: CSSString::from("__HOST__".to_string()),
-            case_sensitivity: ParsedCaseSensitivity::CaseSensitive,
-            never_matches: false,
-          };
-        }
+          // 处理 :host 选择器 :host => [is=__HOST__]
+          Component::Host(_host) => {
+            *component = Component::AttributeInNoNamespace {
+              local_name: Ident::from("is"),
+              operator: AttrSelectorOperator::Equal,
+              value: CSSString::from("__HOST__".to_string()),
+              case_sensitivity: ParsedCaseSensitivity::CaseSensitive,
+              never_matches: false,
+            };
+          }
 
-        // 将标签替换成 attribute 属性选择符  div => [meta:tag="div"]
-        Component::LocalName(local_name) => {
-          *component = Component::AttributeInNoNamespace {
-            local_name: Ident::from("meta:tag"),
-            operator: AttrSelectorOperator::Equal,
-            value: CSSString::from(local_name.name.to_string()),
-            case_sensitivity: ParsedCaseSensitivity::CaseSensitive,
-            never_matches: false,
-          };
-        }
-        // 递归处理子选择器
-        Component::Negation(selectors)
-        | Component::Is(selectors)
-        | Component::Where(selectors)
-        | Component::Has(selectors) => {
-          for sub_selector in selectors.iter_mut() {
-            self.visit_selector(sub_selector)?;
+          // 将标签替换成 attribute 属性选择符  div => [meta:tag="div"]
+          Component::LocalName(local_name) => {
+            *component = Component::AttributeInNoNamespace {
+              local_name: Ident::from("meta:tag"),
+              operator: AttrSelectorOperator::Equal,
+              value: CSSString::from(local_name.name.to_string()),
+              case_sensitivity: ParsedCaseSensitivity::CaseSensitive,
+              never_matches: false,
+            };
+          }
+          // 递归处理子选择器
+          Component::Negation(selectors)
+          | Component::Is(selectors)
+          | Component::Where(selectors)
+          | Component::Has(selectors) => {
+            for sub_selector in selectors.iter_mut() {
+              self.visit_selector(sub_selector)?;
+            }
+          }
+
+          _ => {
+            // 其他选择器不做处理
           }
         }
-        _ => {
-          // 其他选择器不做处理
-        }
       }
+    } else {
+      selector.visit_children(self)?;
     }
 
     Ok(())
@@ -333,6 +338,42 @@ mod tests {
   #[test]
   fn test_remove_mutil_host() {
     let input = ":host { color: black; width: 100rpx } :host { height: 20rpx; }".to_string();
+    let result = transform_css(input.to_string());
+    let result_unwrapped = result.unwrap();
+    assert_snapshot!(result_unwrapped.css);
+    assert_snapshot!(result_unwrapped.host_css.unwrap_or_default());
+  }
+
+  #[test]
+  fn test_webkit_any_host() {
+    let input = indoc! {r#"
+      :-webkit-any(.h5-article) :-webkit-any(.h5-article) :-webkit-any(.h5-article) .sf-h5-h1 {
+          -webkit-margin-before: 1.33em;
+          -webkit-margin-after: 1.33em;
+          margin-top: 1.33em;
+          margin-bottom: 1.33em;
+          font-size: 1em;
+        }
+      "#}
+    .to_string();
+    let result = transform_css(input.to_string());
+    let result_unwrapped = result.unwrap();
+    assert_snapshot!(result_unwrapped.css);
+    assert_snapshot!(result_unwrapped.host_css.unwrap_or_default());
+  }
+
+  #[test]
+  fn test_any_host() {
+    let input = indoc! {r#"
+      :any(.h5-article) :any(.h5-article) :any(.h5-article) .sf-h5-h1 {
+          -webkit-margin-before: 1.33em;
+          -webkit-margin-after: 1.33em;
+          margin-top: 1.33em;
+          margin-bottom: 1.33em;
+          font-size: 1em;
+        }
+      "#}
+    .to_string();
     let result = transform_css(input.to_string());
     let result_unwrapped = result.unwrap();
     assert_snapshot!(result_unwrapped.css);
