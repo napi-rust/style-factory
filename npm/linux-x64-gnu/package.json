@@ -1,8 +1,12 @@
 {
   "name": "@noyobo/style-factory-linux-x64-gnu",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publishConfig": {
     "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/napi-rust/style-factory.git"
   },
   "os": [
     "linux"
