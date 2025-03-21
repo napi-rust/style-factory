@@ -6,7 +6,7 @@ exports[`runCompile all > style-factory > rs 1`] = `".sf-foo{color:red;height:50
 
 exports[`runCompile calc > style-factory > js 1`] = `".sf-h1{height:15px}.sf-h2{width:35px}"`;
 
-exports[`runCompile calc > style-factory > rs 1`] = `".sf-h1{height:calc(50rpx - 20rpx)}.sf-h2{width:calc(50rpx - -20rpx)}"`;
+exports[`runCompile calc > style-factory > rs 1`] = `".sf-h1{height:15px}.sf-h2{width:35px}"`;
 
 exports[`runCompile comment > style-factory > js 1`] = `".sf-foo{color:red;height:50px}"`;
 

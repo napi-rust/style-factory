@@ -2,7 +2,7 @@ use lightningcss::{
   properties::custom::{Function, Token, TokenList, TokenOrValue},
   rules::{unknown::UnknownAtRule, CssRule},
   selector::{Component, Selector, SelectorList},
-  stylesheet::{ParserOptions, StyleSheet},
+  stylesheet::{MinifyOptions, ParserOptions, StyleSheet},
   traits::ToCss,
   values::{ident::Ident, string::CSSString},
   visitor::{Visit, VisitTypes, Visitor},
@@ -34,6 +34,7 @@ fn get_printer_options<'a>() -> PrinterOptions<'a> {
 
 struct FactoryVisitor {
   types: VisitTypes,
+  host_css_vec: Vec<String>,
 }
 
 impl<'i> Visitor<'i> for FactoryVisitor {
@@ -178,6 +179,9 @@ impl<'i> Visitor<'i> for FactoryVisitor {
         }
       }
       if is_single_host {
+        let host_css = rule.to_css_string(PrinterOptions::default()).unwrap();
+        // 怎么返回这个 host_css, 添加到一个数组里面，最后返回
+        self.host_css_vec.push(host_css);
         *rule = CssRule::Ignored;
       }
     }
@@ -197,22 +201,48 @@ pub fn transform_css(css: String) -> Result<TransformReturn, Box<dyn Error>> {
   let mut stylesheet =
     StyleSheet::parse(&css, ParserOptions::default()).map_err(|e| format!("Parse error: {}", e))?;
 
+  let mut visitor = FactoryVisitor {
+    types: VisitTypes::all(),
+    host_css_vec: Vec::new(),
+  };
+
   // 2. 遍历规则（处理访问错误）
   stylesheet
-    .visit(&mut FactoryVisitor {
-      types: VisitTypes::all(),
-    })
+    .visit(&mut visitor)
     .map_err(|e| format!("Visit error: {}", e))?;
+
+  stylesheet
+    .minify(MinifyOptions::default())
+    .map_err(|e| format!("Minify error: {}", e))?;
 
   // 3. 生成 CSS（处理序列化错误）
   let res: lightningcss::stylesheet::ToCssResult = stylesheet
     .to_css(get_printer_options())
     .map_err(|e| format!("Serialize error: {}", e))?;
 
+  let host_css_string = if visitor.host_css_vec.len() > 0 {
+    let host_css_css = visitor.host_css_vec.join("\n");
+
+    let mut host_stylesheet = StyleSheet::parse(&host_css_css, ParserOptions::default())
+      .map_err(|e| format!("Parse host error: {}", e))?;
+
+    host_stylesheet
+      .minify(MinifyOptions::default())
+      .map_err(|e| format!("Minify host error: {}", e))?;
+
+    let host_css_css = host_stylesheet
+      .to_css(get_printer_options())
+      .map_err(|e| format!("Serialize host error: {}", e))?;
+
+    Some(host_css_css.code)
+  } else {
+    None
+  };
+
   // 4. 返回成功结果
   Ok(TransformReturn {
     css: res.code,
-    host_css: None,
+    host_css: host_css_string,
   })
 }
 
@@ -295,7 +325,18 @@ mod tests {
   fn test_remove_single_host() {
     let input = ":host { color: black; }".to_string();
     let result = transform_css(input.to_string());
-    assert_snapshot!(result.unwrap().css);
+    let result_unwrapped = result.unwrap();
+    assert_snapshot!(result_unwrapped.css);
+    assert_snapshot!(result_unwrapped.host_css.unwrap_or_default());
+  }
+
+  #[test]
+  fn test_remove_mutil_host() {
+    let input = ":host { color: black; width: 100rpx } :host { height: 20rpx; }".to_string();
+    let result = transform_css(input.to_string());
+    let result_unwrapped = result.unwrap();
+    assert_snapshot!(result_unwrapped.css);
+    assert_snapshot!(result_unwrapped.host_css.unwrap_or_default());
   }
 
   #[test]
