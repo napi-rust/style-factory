@@ -2,17 +2,20 @@
   "name": "@noyobo/style-factory-darwin-arm64",
   "version": "0.1.0",
   "os": [
-    "darwin"
+    "linux"
   ],
   "cpu": [
-    "arm64"
+    "x64"
   ],
-  "main": "style-factory.darwin-arm64.node",
+  "main": "test-api.linux-x64-musl.node",
   "files": [
-    "style-factory.darwin-arm64.node"
+    "test-api.linux-x64-musl.node"
   ],
   "license": "MIT",
   "engines": {
     "node": ">= 10"
-  }
+  },
+  "libc": [
+    "musl"
+  ]
 }
