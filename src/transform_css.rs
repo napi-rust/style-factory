@@ -1,5 +1,5 @@
 use lightningcss::{
-  properties::custom::{Token, TokenList, TokenOrValue},
+  properties::custom::{Function, Token, TokenList, TokenOrValue},
   rules::{unknown::UnknownAtRule, CssRule},
   selector::{Component, Selector, SelectorList},
   stylesheet::{ParserOptions, StyleSheet},
@@ -39,7 +39,27 @@ impl<'i> Visitor<'i> for MyVisitor {
   type Error = Box<dyn Error>;
 
   fn visit_types(&self) -> VisitTypes {
-    visit_types!(LENGTHS | TOKENS | SELECTORS | RULES)
+    visit_types!(
+      RULES
+        | PROPERTIES
+        | URLS
+        | COLORS
+        | IMAGES
+        | LENGTHS
+        | ANGLES
+        | RATIOS
+        | RESOLUTIONS
+        | TIMES
+        | CUSTOM_IDENTS
+        | DASHED_IDENTS
+        | VARIABLES
+        | ENVIRONMENT_VARIABLES
+        | MEDIA_QUERIES
+        | SUPPORTS_CONDITIONS
+        | SELECTORS
+        | FUNCTIONS
+        | TOKENS
+    )
   }
 
   fn visit_token(&mut self, token: &mut TokenOrValue<'i>) -> Result<(), Self::Error> {
@@ -59,8 +79,44 @@ impl<'i> Visitor<'i> for MyVisitor {
         }
         _ => {}
       },
+      TokenOrValue::Var(ref mut var) => {
+        var.fallback.visit_children(self)?;
+      }
       _ => {}
     }
+    Ok(())
+  }
+
+  // fn visit_declaration_block(
+  //   &mut self,
+  //   decls: &mut lightningcss::declaration::DeclarationBlock<'i>,
+  // ) -> Result<(), Self::Error> {
+  //   println!("decls: {:?}", decls);
+  //   decls.visit_children(self)?;
+  //   Ok(())
+  // }
+
+  // fn visit_property(
+  //   &mut self,
+  //   property: &mut lightningcss::properties::Property<'i>,
+  // ) -> Result<(), Self::Error> {
+  //   println!("property: {:?}", property);
+  //   // property.visit_children(self)?;
+  //   Ok(())
+  // }
+
+  fn visit_function(&mut self, function: &mut Function<'i>) -> Result<(), Self::Error> {
+    let args = &mut function.arguments;
+    args.visit_children(self)?;
+    Ok(())
+  }
+
+  fn visit_token_list(&mut self, tokens: &mut TokenList<'i>) -> Result<(), Self::Error> {
+    // println!("tokens: {:?}", tokens);
+    for token in tokens.0.iter_mut() {
+      token.visit_children(self)?;
+    }
+    tokens.visit_children(self)?;
     Ok(())
   }
 
@@ -138,6 +194,8 @@ impl<'i> Visitor<'i> for MyVisitor {
     // 确保其他规则也能被访问
     rule.visit_children(self)?;
 
+    // println!("rule: {:?}", rule);
+
     // rule_exit 时，处理一些特殊的选择器
     // 如果是一个独立 :host 选择器 则移除这条规则
     if let CssRule::Style(style) = rule {
@@ -208,7 +266,7 @@ mod tests {
 
   #[test]
   fn test_is_selector() {
-    let input = ".a:is(.b, .c) { height: calc(100rpx - 50rpx); }".to_string();
+    let input = ".a:is(.b, .c) { height: calc(50rpx - var(--abc, 100rpx)); }".to_string();
     assert_snapshot!(transform_css(input).unwrap());
   }
 
