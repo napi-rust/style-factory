@@ -1,5 +1,0 @@
----
-source: src/convert_token.rs
-expression: result.unwrap().css
----
-@-webkit-keyframes anim-show{to{opacity:1;width:"__RPX__(30)"}}@keyframes anim-show{to{opacity:1;height:"__RPX__(-30)"}}@-webkit-keyframes anim-hide{to{opacity:0}}@keyframes anim-hide{to{opacity:0}}

@@ -1,3 +1,4 @@
+/* 2025/3/22 17:58:52 */
 .h1:not(.foo) {
-  background-image: url(./abc.sbc);
+  background-image: url('./abc.sbc');
 }

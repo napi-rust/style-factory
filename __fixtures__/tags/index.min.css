@@ -1,5 +1,12 @@
-view + button,
-web-view,
+/* 2025/3/22 17:58:52 */
+view + button {
+  color: #363636;
+}
+
+web-view {
+  color: #363636;
+}
+
 button {
   color: #363636;
 }

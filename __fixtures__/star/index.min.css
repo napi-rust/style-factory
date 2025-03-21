@@ -1,7 +1,12 @@
+/* 2025/3/22 17:58:52 */
 * {
   padding: 0;
 }
-page,
+
+page {
+  color: red;
+}
+
 .abc * {
   color: red;
 }

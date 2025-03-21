@@ -1,5 +1,0 @@
----
-source: src/convert_token.rs
-expression: result.unwrap().css
----
-unsupported-web-view [is=__HOST__]{color:#000}

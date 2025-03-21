@@ -1,0 +1,5 @@
+---
+source: src/convert_css.rs
+expression: result.unwrap().css
+---
+.__PREFIX__a:where(.__PREFIX__b,.__PREFIX__c){color:green}

@@ -1,8 +1,13 @@
+/* 2025/3/22 17:58:52 */
 :host {
   color: red;
   width: 100rpx;
+}
+
+:host {
   font-size: 10px;
 }
+
 .a :host {
   height: 100rpx;
 }

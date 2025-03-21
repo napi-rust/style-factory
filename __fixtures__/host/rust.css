@@ -1,8 +1,0 @@
-[is='component-666'] {
-  color: red;
-  width: 50px;
-  font-size: 10px;
-}
-.sf-a [is='component-666'] {
-  height: 50px;
-}

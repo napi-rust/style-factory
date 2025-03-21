@@ -1,0 +1,5 @@
+---
+source: src/convert_css.rs
+expression: result.unwrap().css
+---
+.__PREFIX__body .__PREFIX__h1{--width:"__RPX__(100)";color:#fff;height:"__RPX__(-20)";width:var(--width,"__RPX__(200)");transform:translateX("__RPX__(100)");calc:calc("__RPX__(100)" + "__RPX__(-100)")}

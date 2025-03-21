@@ -1,20 +1,24 @@
+/* 2025/3/22 17:58:52 */
 @-webkit-keyframes anim-show {
-  to {
+  100% {
     opacity: 1;
   }
 }
+
 @keyframes anim-show {
-  to {
+  100% {
     opacity: 1;
   }
 }
+
 @-webkit-keyframes anim-hide {
-  to {
+  100% {
     opacity: 0;
   }
 }
+
 @keyframes anim-hide {
-  to {
+  100% {
     opacity: 0;
   }
 }

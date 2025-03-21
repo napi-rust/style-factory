@@ -1,5 +1,5 @@
-import { join } from 'path';
-import { runCompile } from '../runCompile.ts';
+import {join} from 'node:path';
+import {runCompile} from '../runCompile.ts';
 
 const input = join(__dirname, 'index.css');
 

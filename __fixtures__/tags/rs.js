@@ -8,7 +8,7 @@ export default function styleFactory(options) {
   var rpx = options.rpx;
   var host = options.host || 'host-placeholder';
   var css = [
-    '[meta\\:tag=view]+[meta\\:tag=button],unsupport-web-view,[meta\\:tag=button]{color:#363636}',
+    '[meta\\:tag=view]+[meta\\:tag=button],unsupported-web-view,[meta\\:tag=button]{color:#363636}',
     '',
   ].join('');
 

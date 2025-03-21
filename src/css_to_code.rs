@@ -19,11 +19,9 @@ pub fn css_to_code(options: Css2CodeOptions<'_>) -> String {
   let css_code = process_text(options.css, Some(&imports));
 
   // Process Host CSS
-  let host_css_code = if let Some(hc) = options.host_css {
-    process_text(hc, None)
-  } else {
-    String::new()
-  };
+  let host_css_code = options
+    .host_css
+    .map_or_else(String::new, |hc| process_text(hc, None));
 
   generate_output(&css_code, &host_css_code, &imports.into_inner().unwrap())
 }

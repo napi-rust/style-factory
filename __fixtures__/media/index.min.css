@@ -1,4 +1,5 @@
-@media screen and (width>=900px) {
+/* 2025/3/22 17:58:52 */
+@media screen and (min-width: 900px) {
   .article {
     padding: 1rem 3rem;
   }

@@ -12,7 +12,7 @@ export default function styleFactory(options) {
     prefix,
     'h1:not(.',
     prefix,
-    'foo){background-image:url(./abc.sbc)}',
+    "foo){background-image:url('./abc.sbc')}",
   ].join('');
 
   return css;

@@ -1,5 +1,0 @@
----
-source: src/convert_token.rs
-expression: result.unwrap().css
----
-.__PREFIX__a:has(.__PREFIX__b){color:purple}

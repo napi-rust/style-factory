@@ -8,7 +8,7 @@ export default function styleFactory(options) {
   var rpx = options.rpx;
   var host = options.host || 'host-placeholder';
   var css = [
-    '@media screen and (width>=900px){.',
+    '@media screen and (min-width: 900px){.',
     prefix,
     'article{padding:1rem 3rem}}',
   ].join('');

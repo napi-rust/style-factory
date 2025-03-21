@@ -8,7 +8,7 @@ export default function styleFactory(options) {
   var rpx = options.rpx;
   var host = options.host || 'host-placeholder';
   var css = [
-    '@-webkit-keyframes anim-show{to{opacity:1}}@keyframes anim-show{to{opacity:1}}@-webkit-keyframes anim-hide{to{opacity:0}}@keyframes anim-hide{to{opacity:0}}',
+    '@-webkit-keyframes anim-show{100%{opacity:1}}@keyframes anim-show{100%{opacity:1}}@-webkit-keyframes anim-hide{100%{opacity:0}}@keyframes anim-hide{100%{opacity:0}}',
   ].join('');
 
   return css;

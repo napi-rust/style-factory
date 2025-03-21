@@ -1,0 +1,5 @@
+---
+source: src/convert_css.rs
+expression: result.unwrap().css
+---
+unsupported-web-view [is=__HOST__]{color:#000}
