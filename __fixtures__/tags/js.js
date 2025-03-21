@@ -12,7 +12,7 @@ export default function styleFactory(options) {
     ' + ',
     '[meta\\:tag=button]',
     ', ',
-    '[meta\\:tag=web-view]',
+    'unsupport-web-view',
     ', ',
     '[meta\\:tag=button]',
     '{color:#363636}',

@@ -116,13 +116,21 @@ impl<'i> Visitor<'i> for FactoryVisitor {
 
           // 将标签替换成 attribute 属性选择符  div => [meta:tag="div"]
           Component::LocalName(local_name) => {
-            *component = Component::AttributeInNoNamespace {
-              local_name: Ident::from("meta:tag"),
-              operator: AttrSelectorOperator::Equal,
-              value: CSSString::from(local_name.name.to_string()),
-              case_sensitivity: ParsedCaseSensitivity::CaseSensitive,
-              never_matches: false,
-            };
+            // 如果是 web-view 标签, 则修改成 unsupport-web-view
+            if local_name.name == "web-view" {
+              *component = Component::LocalName(LocalName {
+                name: "unsupport-web-view".into(),
+                lower_name: "unsupport-web-view".into(),
+              });
+            } else {
+              *component = Component::AttributeInNoNamespace {
+                local_name: Ident::from("meta:tag"),
+                operator: AttrSelectorOperator::Equal,
+                value: CSSString::from(local_name.name.to_string()),
+                case_sensitivity: ParsedCaseSensitivity::CaseSensitive,
+                never_matches: false,
+              };
+            }
           }
           // 递归处理子选择器
           Component::Negation(selectors)
@@ -314,7 +322,7 @@ mod tests {
 
   #[test]
   fn test_host_selector() {
-    let input = ".a :host { color: black; }".to_string();
+    let input = "web-view :host { color: black; }".to_string();
     let result = transform_css(input.to_string());
     assert_snapshot!(result.unwrap().css);
   }

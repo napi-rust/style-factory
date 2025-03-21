@@ -60,8 +60,8 @@ export const runCompare = async (file: string) => {
       if (t === '\\*') {
         return 'unsupport-star';
       }
-      if (t === 'page') {
-        return '[meta\\\\:tag=page]';
+      if (t === 'web-view') {
+        return 'unsupport-web-view';
       }
       return `[meta\\\\:tag=${t}]`;
     },
