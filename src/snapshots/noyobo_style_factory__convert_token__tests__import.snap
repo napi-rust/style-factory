@@ -1,0 +1,5 @@
+---
+source: src/convert_token.rs
+expression: result.unwrap().css
+---
+@import-style ("./a.css");

@@ -1,0 +1,5 @@
+---
+source: src/convert_token.rs
+expression: convert_token(input).unwrap().css
+---
+#abc .__PREFIX__a:not([meta\:tag=div].__PREFIX__b:not(.__PREFIX__c:not(.__PREFIX__d))) .__PREFIX__e:after{color:red}

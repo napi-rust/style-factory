@@ -38,7 +38,7 @@
       ]
     }
   },
-  "license": "MIT",
+  "license": "GNU AGPL v3",
   "devDependencies": {
     "@napi-rs/cli": "^2.18.4",
     "@types/fs-extra": "^11.0.4",
