@@ -1,0 +1,69 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`runCompile all > style-factory > js 1`] = `".sf-foo{color:red;height:50px}#id,.sf-class,[is=component-666]{color:red}.sf-foo{color:green}.sf-a .sf-b,.sf-a>.sf-b,.sf-a~.sf-b,.sf-a+.sf-b,.sf-a:after{color:red}:root{--main-bg-color:#fefefe;--main-text-color:#363636}[theme=dark]:root{--main-bg-color:#2f3a44;--main-text-color:#c5c5c5}"`;
+
+exports[`runCompile all > style-factory > rs 1`] = `".sf-foo{color:red;height:50px}#id,.sf-class,[is=component-666]{color:red}.sf-foo{color:green}.sf-a .sf-b,.sf-a>.sf-b,.sf-a~.sf-b,.sf-a+.sf-b,.sf-a:after{color:red}:root{--main-bg-color:#fefefe;--main-text-color:#363636}:root[theme=dark]{--main-bg-color:#2f3a44;--main-text-color:#c5c5c5}"`;
+
+exports[`runCompile calc > style-factory > js 1`] = `".sf-h1{height:15px}.sf-h2{width:35px}"`;
+
+exports[`runCompile calc > style-factory > rs 1`] = `".sf-h1{height:calc(50rpx - 20rpx)}.sf-h2{width:calc(50rpx - -20rpx)}"`;
+
+exports[`runCompile comment > style-factory > js 1`] = `".sf-foo{color:red;height:50px}"`;
+
+exports[`runCompile comment > style-factory > rs 1`] = `".sf-foo{color:red;height:50px}"`;
+
+exports[`runCompile empty > style-factory > js 1`] = `""`;
+
+exports[`runCompile empty > style-factory > rs 1`] = `""`;
+
+exports[`runCompile font-face > style-factory > js 1`] = `"@font-face{font-family:iconfont;src:url(/components/foo/iconfont.woff2?t=1642945972391)format("woff2")}"`;
+
+exports[`runCompile font-face > style-factory > rs 1`] = `"@font-face{font-family:iconfont;src:url(/components/foo/iconfont.woff2?t=1642945972391)format("woff2")}"`;
+
+exports[`runCompile host > style-factory > js 1`] = `"[is=component-666]{color:red;width:50px;font-size:10px}.sf-a [is=component-666]{height:50px}"`;
+
+exports[`runCompile host > style-factory > rs 1`] = `".sf-a [is=component-666]{height:50px}"`;
+
+exports[`runCompile important > style-factory > js 1`] = `".sf-a{position:absolute!important}"`;
+
+exports[`runCompile important > style-factory > rs 1`] = `".sf-a{position:absolute!important}"`;
+
+exports[`runCompile keyframes > style-factory > js 1`] = `"@keyframes slidein{0%{transform:translate(0%)}to{transform:translate(100%)}}"`;
+
+exports[`runCompile keyframes > style-factory > rs 1`] = `"@keyframes slidein{0%{transform:translate(0%)}to{transform:translate(100%)}}"`;
+
+exports[`runCompile keyframes-2 > style-factory > js 1`] = `"@keyframes anim-show{to{opacity:1}}@keyframes anim-hide{to{opacity:0}}"`;
+
+exports[`runCompile keyframes-2 > style-factory > rs 1`] = `"@keyframes anim-show{to{opacity:1}}@keyframes anim-hide{to{opacity:0}}"`;
+
+exports[`runCompile media > style-factory > js 1`] = `"@media screen and (min-width:900px){.sf-article{padding:1rem 3rem}}"`;
+
+exports[`runCompile media > style-factory > rs 1`] = `"@media screen and (min-width:900px){.sf-article{padding:1rem 3rem}}"`;
+
+exports[`runCompile media2 > style-factory > js 1`] = `"@supports (display:flex){@media screen and (min-width:900px){.sf-article{display:flex}}}"`;
+
+exports[`runCompile media2 > style-factory > rs 1`] = `"@supports (display:flex){@media screen and (min-width:900px){.sf-article{display:flex}}}"`;
+
+exports[`runCompile not > style-factory > js 1`] = `".sf-a:not(.sf-b){color:red}"`;
+
+exports[`runCompile not > style-factory > rs 1`] = `".sf-a:not(.sf-b){color:red}"`;
+
+exports[`runCompile nth-child > style-factory > js 1`] = `"ty-button:nth-child(2){color:red}"`;
+
+exports[`runCompile nth-child > style-factory > rs 1`] = `"[meta\\:tag=ty-button]:nth-child(2){color:red}"`;
+
+exports[`runCompile nth-child2 > style-factory > js 1`] = `".sf-ty-scroll-view-loading-black .sf-ty-scroll-view-dot:first-child,.sf-ty-scroll-view-loading-white .sf-ty-scroll-view-dot:first-child{animation:.9s infinite ty-scroll-view-keyframes}.sf-ty-scroll-view-loading-black .sf-ty-scroll-view-dot:nth-child(2),.sf-ty-scroll-view-loading-white .sf-ty-scroll-view-dot:nth-child(2){animation:.9s .3s infinite ty-scroll-view-keyframes}.sf-ty-scroll-view-loading-black .sf-ty-scroll-view-dot:nth-child(3),.sf-ty-scroll-view-loading-white .sf-ty-scroll-view-dot:nth-child(3){animation:.9s .6s infinite ty-scroll-view-keyframes}"`;
+
+exports[`runCompile nth-child2 > style-factory > rs 1`] = `".sf-ty-scroll-view-loading-black .sf-ty-scroll-view-dot:first-child,.sf-ty-scroll-view-loading-white .sf-ty-scroll-view-dot:first-child{animation:.9s infinite ty-scroll-view-keyframes}.sf-ty-scroll-view-loading-black .sf-ty-scroll-view-dot:nth-child(2),.sf-ty-scroll-view-loading-white .sf-ty-scroll-view-dot:nth-child(2){animation:.9s .3s infinite ty-scroll-view-keyframes}.sf-ty-scroll-view-loading-black .sf-ty-scroll-view-dot:nth-child(3),.sf-ty-scroll-view-loading-white .sf-ty-scroll-view-dot:nth-child(3){animation:.9s .6s infinite ty-scroll-view-keyframes}"`;
+
+exports[`runCompile star > style-factory > js 1`] = `"*{padding:0}page,.sf-abc *{color:red}"`;
+
+exports[`runCompile star > style-factory > rs 1`] = `"unsupport-star{padding:0}[meta\\:tag=page],.sf-abc unsupport-star{color:red}"`;
+
+exports[`runCompile tags > style-factory > js 1`] = `"view+button,web-view,button{color:#363636}"`;
+
+exports[`runCompile tags > style-factory > rs 1`] = `"[meta\\:tag=view]+[meta\\:tag=button],[meta\\:tag=web-view],[meta\\:tag=button]{color:#363636}"`;
+
+exports[`runCompile url > style-factory > js 1`] = `".sf-h1:not(.sf-foo){background-image:url(abc\\).sbc)}"`;
+
+exports[`runCompile url > style-factory > rs 1`] = `".sf-h1:not(.sf-foo){background-image:url(abc\\).sbc)}"`;

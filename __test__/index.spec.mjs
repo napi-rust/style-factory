@@ -8,7 +8,7 @@ describe('styleFactory', () => {
     expect(css).toMatchInlineSnapshot(`
       "export default function styleFactory(options) {
         var prefix = options.prefix || '';
-        var tag = options.tag || (tag => tag);
+        var tag = options.tag || function (tag) { return tag; };
         var rpx = options.rpx;
         var host = options.host || 'host-placeholder';
         var css = "[meta\\\\:tag=body]{height:" + rpx(100) + "px}";
@@ -23,7 +23,7 @@ describe('styleFactory', () => {
     expect(css).toMatchInlineSnapshot(`
       "export default function styleFactory(options) {
         var prefix = options.prefix || '';
-        var tag = options.tag || (tag => tag);
+        var tag = options.tag || function (tag) { return tag; };
         var rpx = options.rpx;
         var host = options.host || 'host-placeholder';
         var css = "@keyframes mymove{0%{top:0}to{top:200px}}";
@@ -39,7 +39,7 @@ describe('styleFactory', () => {
       "import I_1568b90116e4f2a5d70b882f42df82dd from "./style.css";
       export default function styleFactory(options) {
         var prefix = options.prefix || '';
-        var tag = options.tag || (tag => tag);
+        var tag = options.tag || function (tag) { return tag; };
         var rpx = options.rpx;
         var host = options.host || 'host-placeholder';
         var css = "" + I_1568b90116e4f2a5d70b882f42df82dd(options) + "";

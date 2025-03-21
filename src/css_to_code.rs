@@ -1,8 +1,9 @@
 use indoc::formatdoc;
-use lazy_regex::regex_replace_all;
+use lazy_regex::{lazy_regex, regex::Captures, Regex};
 use md5::{Digest, Md5};
-use pipe_trait::Pipe;
+use once_cell::sync::Lazy;
 use std::collections::HashMap;
+use std::sync::Mutex;
 
 // ---- Core Logic ----
 #[derive(Debug, Clone)]
@@ -12,10 +13,10 @@ pub struct Css2CodeOptions<'css_string> {
 }
 
 pub fn css_to_code(options: Css2CodeOptions<'_>) -> String {
-  let mut imports = HashMap::new();
+  let imports = Mutex::new(HashMap::new());
 
   // Process main CSS
-  let css_code = process_text(options.css, Some(&mut imports));
+  let css_code = process_text(options.css, Some(&imports));
 
   // Process Host CSS
   let host_css_code = if let Some(hc) = options.host_css {
@@ -24,7 +25,7 @@ pub fn css_to_code(options: Css2CodeOptions<'_>) -> String {
     String::new()
   };
 
-  generate_output(&css_code, &host_css_code, &imports)
+  generate_output(&css_code, &host_css_code, &imports.into_inner().unwrap())
 }
 
 // ---- Private Helper Functions ----
@@ -40,32 +41,41 @@ fn json_escape(s: &str) -> String {
     .replace('\n', r"\n")
 }
 
-fn process_text(text: &str, mut imports: Option<&mut HashMap<String, String>>) -> String {
-  json_escape(text)
-    .pipe(|escaped| regex_replace_all!("__PREFIX__", &escaped, r#"" + prefix + ""#).into_owned())
-    .pipe(|replaced| regex_replace_all!("__HOST__", &replaced, r#"" + host + ""#).into_owned())
-    .pipe(|replaced| {
-      regex_replace_all!(r#"\\"__RPX__\(([^)]+)\)\\""#, &replaced, |_, unit| {
-        format!(r#"" + rpx({}) + "px"#, unit)
+static PREFIX_REGEX: Lazy<Regex> = lazy_regex!(r"__PREFIX__");
+static HOST_REGEX: Lazy<Regex> = lazy_regex!(r"__HOST__");
+static RPX_REGEX: Lazy<Regex> = lazy_regex!(r#"\\"__RPX__\(([^)]+)\)\\""#);
+static IMPORT_REGEX: Lazy<Regex> = lazy_regex!(r#"\@import-style \(\\"([^\)]+)\\"\);"#);
+
+fn process_text(text: &str, imports: Option<&Mutex<HashMap<String, String>>>) -> String {
+  let mut result = json_escape(text);
+
+  result = PREFIX_REGEX
+    .replace_all(&result, r#"" + prefix + ""#)
+    .into_owned();
+  result = HOST_REGEX
+    .replace_all(&result, r#"" + host + ""#)
+    .into_owned();
+  result = RPX_REGEX
+    .replace_all(&result, |caps: &Captures<'_>| {
+      format!(r#"" + rpx({}) + "px"#, &caps[1])
+    })
+    .into_owned();
+
+  if let Some(imports_map) = imports {
+    result = IMPORT_REGEX
+      .replace_all(&result, |caps: &Captures<'_>| {
+        let url = caps[1].into();
+        let fn_name = format!("I_{}", md5_hash(url));
+        imports_map
+          .lock()
+          .unwrap()
+          .insert(url.to_string(), fn_name.clone());
+        format!(r#"" + {}(options) + ""#, fn_name)
       })
-      .into_owned()
-    })
-    .pipe(|result| match &mut imports {
-      Some(imports_map) => {
-        // @import-style (\"./a.css\") => import I_123456 from './a.css';
-        regex_replace_all!(
-          r#"\@import-style \(\\"([^\)]+)\\"\);"#,
-          &result,
-          |_, url| {
-            let fn_name = format!("I_{}", md5_hash(url));
-            imports_map.insert(url.to_string(), fn_name.clone());
-            format!(r#"" + {}(options) + ""#, fn_name)
-          }
-        )
-        .into_owned()
-      }
-      None => result,
-    })
+      .into_owned();
+  }
+
+  result
 }
 
 fn generate_output(
@@ -98,7 +108,7 @@ fn generate_output(
     {import_code}
     export default function styleFactory(options) {{
       var prefix = options.prefix || '';
-      var tag = options.tag || (tag => tag);
+      var tag = options.tag || function (tag) {{ return tag; }};
       var rpx = options.rpx;
       var host = options.host || 'host-placeholder';
       var css = "{css_code}";

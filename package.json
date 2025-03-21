@@ -35,6 +35,9 @@
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^22.13.10",
     "fs-extra": "^11.3.0",
+    "lightningcss": "^1.29.3",
+    "prettier": "^3.5.3",
+    "require-module-exports": "^2.0.2",
     "style-factory": "^2.3.0",
     "tinybench": "^4.0.1",
     "vitest": "^3.0.9"
