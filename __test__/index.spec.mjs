@@ -47,7 +47,7 @@ describe('styleFactory', () => {
         return css;
       }"
     `);
-  })
+  });
 
   it('throw error', () => {
     expect(() => {

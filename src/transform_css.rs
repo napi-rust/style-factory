@@ -208,7 +208,7 @@ mod tests {
 
   #[test]
   fn test_is_selector() {
-    let input = ".a:is(.b, .c) { color: blue; }".to_string();
+    let input = ".a:is(.b, .c) { height: calc(100rpx - 50rpx); }".to_string();
     assert_snapshot!(transform_css(input).unwrap());
   }
 

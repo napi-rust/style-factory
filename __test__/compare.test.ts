@@ -3,11 +3,9 @@ import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { runCompare } from './runCompare';
 
-
 vi.setConfig({
   testTimeout: 20_000,
 });
-
 
 const fixtures = path.join(__dirname, '../__fixtures__');
 
@@ -34,8 +32,6 @@ for (const f of cases) {
   describe(`runCompile ${f}`, async () => {
     it('style-factory', async () => {
       runCompare(cssFile);
-    })
+    });
   });
-
 }
-
