@@ -1,0 +1,3 @@
+.h1:not(.foo) {
+  background-image: url('./abc.sbc');
+}

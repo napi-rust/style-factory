@@ -1,0 +1,27 @@
+.foo {
+  color: red;
+  height: 100rpx;
+}
+#id,
+.class,
+:host {
+  color: red;
+}
+.foo {
+  color: green;
+}
+.a .b,
+.a > .b,
+.a ~ .b,
+.a + .b,
+.a:after {
+  color: red;
+}
+[theme='light'] {
+  --main-bg-color: #fefefe;
+  --main-text-color: #363636;
+}
+[theme='dark'] {
+  --main-bg-color: #2f3a44;
+  --main-text-color: #c5c5c5;
+}

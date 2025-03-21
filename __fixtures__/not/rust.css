@@ -1,0 +1,3 @@
+.sf-a:not(.sf-b) {
+  color: red;
+}

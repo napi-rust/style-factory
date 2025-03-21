@@ -1,0 +1,5 @@
+@media screen and (min-width: 900px) {
+  .foo__article {
+    padding: 1rem 3rem;
+  }
+}

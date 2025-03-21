@@ -1,0 +1,6 @@
+.foo__h1 {
+  height: calc(25px - 10px);
+}
+.foo__h2 {
+  width: calc(25px - -10px);
+}
