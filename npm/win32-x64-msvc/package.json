@@ -1,6 +1,9 @@
 {
   "name": "@noyobo/style-factory-win32-x64-msvc",
   "version": "0.1.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "os": [
     "win32"
   ],

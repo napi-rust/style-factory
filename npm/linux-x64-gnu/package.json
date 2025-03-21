@@ -1,6 +1,9 @@
 {
-  "name": "@noyobo/style-factory-darwin-arm64",
+  "name": "@noyobo/style-factory-linux-x64-gnu",
   "version": "0.1.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "os": [
     "linux"
   ],
