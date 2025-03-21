@@ -19,7 +19,7 @@ use lightningcss::stylesheet::PrinterOptions;
 use lightningcss::targets::{Browsers, Targets};
 
 fn get_printer_options<'a>() -> PrinterOptions<'a> {
-  return PrinterOptions {
+  PrinterOptions {
     minify: true,
     targets: Targets::from(Browsers {
       safari: Some(11),
@@ -29,7 +29,7 @@ fn get_printer_options<'a>() -> PrinterOptions<'a> {
       ..Browsers::default()
     }),
     ..Default::default()
-  };
+  }
 }
 
 struct FactoryVisitor {
@@ -42,116 +42,6 @@ impl<'i> Visitor<'i> for FactoryVisitor {
 
   fn visit_types(&self) -> VisitTypes {
     self.types
-  }
-
-  fn visit_token(&mut self, token: &mut TokenOrValue<'i>) -> Result<(), Self::Error> {
-    // println!("token: {:?}", token);
-    match token {
-      TokenOrValue::Token(value) => match value {
-        Token::Dimension {
-          ref mut value,
-          unit,
-          ..
-        } => {
-          if *unit == "rpx" {
-            // 把当前 token 替换成  __RPX__(value) 的形式
-            *token =
-              TokenOrValue::Token(Token::String(format!("__RPX__({})", value).into()).into());
-          }
-        }
-        _ => {}
-      },
-      TokenOrValue::Var(ref mut var) => {
-        var.fallback.visit_children(self)?;
-      }
-      _ => {}
-    }
-    Ok(())
-  }
-
-  fn visit_function(&mut self, function: &mut Function<'i>) -> Result<(), Self::Error> {
-    let token_list = &mut function.arguments;
-    token_list.visit_children(self)?;
-    Ok(())
-  }
-
-  fn visit_token_list(&mut self, tokens: &mut TokenList<'i>) -> Result<(), Self::Error> {
-    if self.types.contains(VisitTypes::TOKENS) {
-      for token in &mut tokens.0 {
-        token.visit_children(self)?;
-      }
-    }
-    tokens.visit_children(self)?;
-    Ok(())
-  }
-
-  fn visit_selector(&mut self, selector: &mut Selector<'i>) -> Result<(), Self::Error> {
-    // 修改 selector 的样式名, 添加一个 __PREFIX__ 前缀
-    if self.types.contains(VisitTypes::SELECTORS) {
-      for component in &mut selector.iter_mut_raw_match_order() {
-        match component {
-          // 将类名替换成 __PREFIX__ 类名
-          Component::Class(class) => {
-            *class = format!("__PREFIX__{}", class).into();
-          }
-
-          // 处理 * 选择器 * => unsupport-star
-          Component::ExplicitUniversalType => {
-            *component = Component::LocalName(LocalName {
-              name: "unsupport-star".into(),
-              lower_name: "unsupport-star".into(),
-            });
-          }
-
-          // 处理 :host 选择器 :host => [is=__HOST__]
-          Component::Host(_host) => {
-            *component = Component::AttributeInNoNamespace {
-              local_name: Ident::from("is"),
-              operator: AttrSelectorOperator::Equal,
-              value: CSSString::from("__HOST__".to_string()),
-              case_sensitivity: ParsedCaseSensitivity::CaseSensitive,
-              never_matches: false,
-            };
-          }
-
-          // 将标签替换成 attribute 属性选择符  div => [meta:tag="div"]
-          Component::LocalName(local_name) => {
-            // 如果是 web-view 标签, 则修改成 unsupport-web-view
-            if local_name.name == "web-view" {
-              *component = Component::LocalName(LocalName {
-                name: "unsupport-web-view".into(),
-                lower_name: "unsupport-web-view".into(),
-              });
-            } else {
-              *component = Component::AttributeInNoNamespace {
-                local_name: Ident::from("meta:tag"),
-                operator: AttrSelectorOperator::Equal,
-                value: CSSString::from(local_name.name.to_string()),
-                case_sensitivity: ParsedCaseSensitivity::CaseSensitive,
-                never_matches: false,
-              };
-            }
-          }
-          // 递归处理子选择器
-          Component::Negation(selectors)
-          | Component::Is(selectors)
-          | Component::Where(selectors)
-          | Component::Has(selectors) => {
-            for sub_selector in selectors.iter_mut() {
-              self.visit_selector(sub_selector)?;
-            }
-          }
-
-          _ => {
-            // 其他选择器不做处理
-          }
-        }
-      }
-    } else {
-      selector.visit_children(self)?;
-    }
-
-    Ok(())
   }
 
   fn visit_rule(&mut self, rule: &mut CssRule<'i>) -> Result<(), Self::Error> {
@@ -201,6 +91,116 @@ impl<'i> Visitor<'i> for FactoryVisitor {
 
     Ok(())
   }
+
+  fn visit_selector(&mut self, selector: &mut Selector<'i>) -> Result<(), Self::Error> {
+    // 修改 selector 的样式名, 添加一个 __PREFIX__ 前缀
+    if self.types.contains(VisitTypes::SELECTORS) {
+      for component in &mut selector.iter_mut_raw_match_order() {
+        match component {
+          // 将类名替换成 __PREFIX__ 类名
+          Component::Class(class) => {
+            *class = format!("__PREFIX__{}", class).into();
+          }
+
+          // 处理 * 选择器 * => unsupported-star
+          Component::ExplicitUniversalType => {
+            *component = Component::LocalName(LocalName {
+              name: "unsupported-star".into(),
+              lower_name: "unsupported-star".into(),
+            });
+          }
+
+          // 处理 :host 选择器 :host => [is=__HOST__]
+          Component::Host(_host) => {
+            *component = Component::AttributeInNoNamespace {
+              local_name: Ident::from("is"),
+              operator: AttrSelectorOperator::Equal,
+              value: CSSString::from("__HOST__".to_string()),
+              case_sensitivity: ParsedCaseSensitivity::CaseSensitive,
+              never_matches: false,
+            };
+          }
+
+          // 将标签替换成 attribute 属性选择符  div => [meta:tag="div"]
+          Component::LocalName(local_name) => {
+            // 如果是 web-view 标签, 则修改成 unsupported-web-view
+            if local_name.name == "web-view" {
+              *component = Component::LocalName(LocalName {
+                name: "unsupported-web-view".into(),
+                lower_name: "unsupported-web-view".into(),
+              });
+            } else {
+              *component = Component::AttributeInNoNamespace {
+                local_name: Ident::from("meta:tag"),
+                operator: AttrSelectorOperator::Equal,
+                value: CSSString::from(local_name.name.to_string()),
+                case_sensitivity: ParsedCaseSensitivity::CaseSensitive,
+                never_matches: false,
+              };
+            }
+          }
+          // 递归处理子选择器
+          Component::Negation(selectors)
+          | Component::Is(selectors)
+          | Component::Where(selectors)
+          | Component::Has(selectors) => {
+            for sub_selector in selectors.iter_mut() {
+              self.visit_selector(sub_selector)?;
+            }
+          }
+
+          _ => {
+            // 其他选择器不做处理
+          }
+        }
+      }
+    } else {
+      selector.visit_children(self)?;
+    }
+
+    Ok(())
+  }
+
+  fn visit_function(&mut self, function: &mut Function<'i>) -> Result<(), Self::Error> {
+    let token_list = &mut function.arguments;
+    token_list.visit_children(self)?;
+    Ok(())
+  }
+
+  fn visit_token_list(&mut self, tokens: &mut TokenList<'i>) -> Result<(), Self::Error> {
+    if self.types.contains(VisitTypes::TOKENS) {
+      for token in &mut tokens.0 {
+        token.visit_children(self)?;
+      }
+    }
+    tokens.visit_children(self)?;
+    Ok(())
+  }
+
+  fn visit_token(&mut self, token: &mut TokenOrValue<'i>) -> Result<(), Self::Error> {
+    // println!("token: {:?}", token);
+    match token {
+      TokenOrValue::Token(value) => match value {
+        Token::Dimension {
+          ref mut value,
+          unit,
+          ..
+        } => {
+          if *unit == "rpx" {
+            // 把当前 token 替换成  __RPX__(value) 的形式
+            *token =
+              TokenOrValue::Token(Token::String(format!("__RPX__({})", value).into()).into());
+          }
+        }
+        _ => {}
+      },
+      TokenOrValue::Var(ref mut var) => {
+        var.fallback.visit_children(self)?;
+      }
+      _ => {}
+    }
+    Ok(())
+  }
 }
 
 #[derive(Debug)]
@@ -209,7 +209,7 @@ pub struct TransformReturn {
   pub host_css: Option<String>,
 }
 
-pub fn transform_css(css: String) -> Result<TransformReturn, Box<dyn Error>> {
+pub fn convert_token(css: String) -> Result<TransformReturn, Box<dyn Error>> {
   // 1. 解析 CSS（处理解析错误）
   let mut stylesheet =
     StyleSheet::parse(&css, ParserOptions::default()).map_err(|e| format!("Parse error: {}", e))?;
@@ -279,74 +279,74 @@ mod tests {
     "#
     };
 
-    let result = transform_css(input.to_string());
+    let result = convert_token(input.to_string());
     assert_snapshot!(result.unwrap().css);
   }
 
   #[test]
   fn test_pseudo_class() {
-    let input = "#abc .a:not(div.b:not(.c:not(.d))) .e::affter {
+    let input = "#abc .a:not(div.b:not(.c:not(.d))) .e::after {
   color: red;
 }"
     .to_string();
-    assert_snapshot!(transform_css(input).unwrap().css);
+    assert_snapshot!(convert_token(input).unwrap().css);
   }
 
   #[test]
   fn test_is_selector() {
     let input = ".a:is(.b, .c) { height: calc(50rpx - var(--abc, 100rpx)); }".to_string();
-    let result = transform_css(input.to_string());
+    let result = convert_token(input.to_string());
     assert_snapshot!(result.unwrap().css);
   }
 
   #[test]
   fn test_where_selector() {
     let input = ".a:where(.b, .c) { color: green; }".to_string();
-    let result = transform_css(input.to_string());
+    let result = convert_token(input.to_string());
     assert_snapshot!(result.unwrap().css);
   }
 
   #[test]
   fn test_has_selector() {
     let input = ".a:has(.b) { color: purple; }".to_string();
-    let result = transform_css(input.to_string());
+    let result = convert_token(input.to_string());
     assert_snapshot!(result.unwrap().css);
   }
 
   #[test]
   fn test_star_selector() {
     let input = "* { color: black; } .a * {height: 100px;}".to_string();
-    let result = transform_css(input.to_string());
+    let result = convert_token(input.to_string());
     assert_snapshot!(result.unwrap().css);
   }
 
   #[test]
   fn test_host_selector() {
     let input = "web-view :host { color: black; }".to_string();
-    let result = transform_css(input.to_string());
+    let result = convert_token(input.to_string());
     assert_snapshot!(result.unwrap().css);
   }
 
   #[test]
   fn test_import() {
     let input = "@import url('./a.css');".to_string();
-    let result = transform_css(input.to_string());
+    let result = convert_token(input.to_string());
     assert_snapshot!(result.unwrap().css);
   }
 
   #[test]
   fn test_remove_single_host() {
     let input = ":host { color: black; }".to_string();
-    let result = transform_css(input.to_string());
+    let result = convert_token(input.to_string());
     let result_unwrapped = result.unwrap();
     assert_snapshot!(result_unwrapped.css);
     assert_snapshot!(result_unwrapped.host_css.unwrap_or_default());
   }
 
   #[test]
-  fn test_remove_mutil_host() {
+  fn test_remove_multi_host() {
     let input = ":host { color: black; width: 100rpx } :host { height: 20rpx; }".to_string();
-    let result = transform_css(input.to_string());
+    let result = convert_token(input.to_string());
     let result_unwrapped = result.unwrap();
     assert_snapshot!(result_unwrapped.css);
     assert_snapshot!(result_unwrapped.host_css.unwrap_or_default());
@@ -364,7 +364,7 @@ mod tests {
         }
       "#}
     .to_string();
-    let result = transform_css(input.to_string());
+    let result = convert_token(input.to_string());
     let result_unwrapped = result.unwrap();
     assert_snapshot!(result_unwrapped.css);
     assert_snapshot!(result_unwrapped.host_css.unwrap_or_default());
@@ -382,7 +382,7 @@ mod tests {
         }
       "#}
     .to_string();
-    let result = transform_css(input.to_string());
+    let result = convert_token(input.to_string());
     let result_unwrapped = result.unwrap();
     assert_snapshot!(result_unwrapped.css);
     assert_snapshot!(result_unwrapped.host_css.unwrap_or_default());
@@ -420,7 +420,7 @@ mod tests {
     }
     .to_string();
 
-    let result = transform_css(input.to_string());
+    let result = convert_token(input.to_string());
     assert_snapshot!(result.unwrap().css);
   }
 
@@ -435,7 +435,7 @@ mod tests {
     }
   "#}
     .to_string();
-    let result = transform_css(input);
+    let result = convert_token(input);
     match result {
       Ok(_) => panic!("Expected an error, but got Ok"),
       Err(e) => {
@@ -451,7 +451,7 @@ mod tests {
     @import url('./b.css')
   "#
     .to_string();
-    let result = transform_css(input);
+    let result = convert_token(input);
     match result {
       Ok(_) => panic!("Expected an error, but got Ok"),
       Err(e) => {
@@ -463,7 +463,7 @@ mod tests {
   #[test]
   fn test_throw_error_input() {
     let input = r#" .a  color: red;}"#.to_string();
-    let result = transform_css(input);
+    let result = convert_token(input);
     match result {
       Ok(_) => panic!("Expected an error, but got Ok"),
       Err(e) => {

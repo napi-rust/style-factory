@@ -1,10 +1,10 @@
 use crate::css_to_code::{css_to_code, Css2CodeOptions};
-use crate::transform_css::transform_css;
+use crate::convert_token::convert_token;
 use std::string::String;
 
 #[napi]
 pub fn style_factory(css_text: String) -> Result<String, napi::Error> {
-  let transform_return = transform_css(css_text)
+  let transform_return = convert_token(css_text)
     .map_err(|e| napi::Error::from_reason(format!("Transform error: {}", e)))?;
 
   let css_code = css_to_code(Css2CodeOptions {
