@@ -64,9 +64,9 @@ exports[`style-factory 2.3.0 vs rust : star > style-factory > js 1`] = `"unsuppo
 
 exports[`style-factory 2.3.0 vs rust : star > style-factory > rs 1`] = `"unsupport-star{padding:0}[meta\\:tag=page],.sf-abc unsupport-star{color:red}"`;
 
-exports[`style-factory 2.3.0 vs rust : tags > style-factory > js 1`] = `"[meta\\:tag=view]+[meta\\:tag=button],[meta\\:tag=web-view],[meta\\:tag=button]{color:#363636}"`;
+exports[`style-factory 2.3.0 vs rust : tags > style-factory > js 1`] = `"[meta\\:tag=view]+[meta\\:tag=button],unsupport-web-view,[meta\\:tag=button]{color:#363636}"`;
 
-exports[`style-factory 2.3.0 vs rust : tags > style-factory > rs 1`] = `"[meta\\:tag=view]+[meta\\:tag=button],[meta\\:tag=web-view],[meta\\:tag=button]{color:#363636}"`;
+exports[`style-factory 2.3.0 vs rust : tags > style-factory > rs 1`] = `"[meta\\:tag=view]+[meta\\:tag=button],unsupport-web-view,[meta\\:tag=button]{color:#363636}"`;
 
 exports[`style-factory 2.3.0 vs rust : url > style-factory > js 1`] = `".sf-h1:not(.sf-foo){background-image:url(./abc.sbc)}"`;
 
