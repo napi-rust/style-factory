@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import { styleFactory } from '../index.js';
 
+import * as bundle from '../index';
+console.log(bundle);
+
 describe('styleFactory', () => {
   it('should return rpx', () => {
     const css = styleFactory(`body { height: 100rpx; }`);

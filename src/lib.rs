@@ -13,4 +13,5 @@ mod style_factory;
 // 样式工厂模块 // Token 转换模块
 
 // 导出样式工厂函数
+pub use compile_css::compile_css;
 pub use style_factory::style_factory;
