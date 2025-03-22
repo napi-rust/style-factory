@@ -8,8 +8,8 @@ export function minifyCss(css: string) {
         code: Buffer.from(css, 'utf8'),
         minify: true,
         targets: {
-          safari: (13 << 16),
-          chrome: (55 << 16),
+          safari: 13 << 16,
+          chrome: 55 << 16,
         },
       }).code.toString(),
     );
