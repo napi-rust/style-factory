@@ -2,13 +2,13 @@ use lightningcss::{
   properties::custom::{Token, TokenList, TokenOrValue},
   rules::{unknown::UnknownAtRule, CssRule},
   selector::{Component, Selector, SelectorList},
-  stylesheet::{MinifyOptions, ParserOptions, PrinterOptions, StyleSheet},
-  targets::{Browsers, Targets},
+  stylesheet::StyleSheet,
   traits::ToCss,
   values::{ident::Ident, string::CSSString},
   visitor::{Visit, VisitTypes, Visitor},
 };
 
+use crate::options::{get_minify_options, get_parser_options, get_printer_options};
 use parcel_selectors::{
   attr::{AttrSelectorOperator, ParsedCaseSensitivity},
   parser::LocalName,
@@ -25,22 +25,6 @@ const IMPORT_STYLE: &str = "import-style";
 const META_TAG: &str = "meta:tag";
 const UNSUPPORTED_STAR: &str = "unsupported-star";
 const UNSUPPORTED_WEB_VIEW: &str = "unsupported-web-view";
-
-fn get_minify_targets() -> Targets {
-  Targets::from(Browsers {
-    safari: Some(13 << 16),
-    chrome: Some(55 << 16),
-    ..Browsers::default()
-  })
-}
-
-fn get_printer_options<'a>() -> PrinterOptions<'a> {
-  PrinterOptions {
-    minify: true,
-    targets: get_minify_targets(),
-    ..PrinterOptions::default()
-  }
-}
 
 struct FactoryVisitor {
   types: VisitTypes,
@@ -265,14 +249,14 @@ impl<'i> Visitor<'i> for FactoryVisitor {
 }
 
 #[derive(Debug, Clone)]
-pub struct TransformReturn {
+pub struct ConvertResult {
   pub css: String,
   pub host_css: Option<String>,
 }
 
-pub fn convert_css(css: String) -> Result<TransformReturn, Box<dyn Error>> {
+pub fn convert_css(css: String) -> Result<ConvertResult, Box<dyn Error>> {
   if css.is_empty() {
-    return Ok(TransformReturn {
+    return Ok(ConvertResult {
       css: "".to_string(),
       host_css: None,
     });
@@ -280,7 +264,7 @@ pub fn convert_css(css: String) -> Result<TransformReturn, Box<dyn Error>> {
 
   // 1. 解析 CSS（处理解析错误）
   let mut stylesheet =
-    StyleSheet::parse(&css, ParserOptions::default()).map_err(|e| format!("Parse error: {}", e))?;
+    StyleSheet::parse(&css, get_parser_options()).map_err(|e| format!("Parse error: {}", e))?;
 
   let mut visitor = FactoryVisitor {
     types: VisitTypes::all(),
@@ -293,10 +277,7 @@ pub fn convert_css(css: String) -> Result<TransformReturn, Box<dyn Error>> {
     .map_err(|e| format!("Visit error: {}", e))?;
 
   stylesheet
-    .minify(MinifyOptions {
-      targets: get_minify_targets(),
-      ..MinifyOptions::default()
-    })
+    .minify(get_minify_options())
     .map_err(|e| format!("Minify error: {}", e))?;
 
   // 3. 生成 CSS（处理序列化错误）
@@ -307,7 +288,7 @@ pub fn convert_css(css: String) -> Result<TransformReturn, Box<dyn Error>> {
   let host_css_string = process_host_css(&visitor.host_css_vec)?;
 
   // 4. 返回成功结果
-  Ok(TransformReturn {
+  Ok(ConvertResult {
     css: res.code,
     host_css: host_css_string,
   })
@@ -321,11 +302,11 @@ fn process_host_css(host_css_vec: &[String]) -> Result<Option<String>, Box<dyn E
 
   let host_css_css = host_css_vec.join("\n");
 
-  let mut host_stylesheet = StyleSheet::parse(&host_css_css, ParserOptions::default())
+  let mut host_stylesheet = StyleSheet::parse(&host_css_css, get_parser_options())
     .map_err(|e| format!("Parse host error: {}", e))?;
 
   host_stylesheet
-    .minify(MinifyOptions::default())
+    .minify(get_minify_options())
     .map_err(|e| format!("Minify host error: {}", e))?;
 
   let host_css_css = host_stylesheet
@@ -424,7 +405,7 @@ mod tests {
     let input = ":host { color: black; }".to_string();
     let result = convert_css(input.to_string());
     let result_unwrapped = result.unwrap();
-    assert_eq!(result_unwrapped.css.trim(), "");
+    assert!(result_unwrapped.css.is_empty());
     assert_snapshot!(result_unwrapped.host_css.unwrap_or_default());
   }
 

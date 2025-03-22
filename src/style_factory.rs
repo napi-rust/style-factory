@@ -2,7 +2,7 @@ use crate::convert_css::convert_css;
 use crate::css_to_code::{css_to_code, Css2CodeOptions};
 use std::string::String;
 
-#[napi]
+#[napi(js_name = "styleFactory")]
 pub fn style_factory(css_text: String) -> Result<String, napi::Error> {
   let transform_return = convert_css(css_text)
     .map_err(|e| napi::Error::from_reason(format!("Transform error: {}", e)))?;

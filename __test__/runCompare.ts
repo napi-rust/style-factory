@@ -55,7 +55,7 @@ export const runCompare = async (file: string) => {
   const context = readFileSync(file);
   const code = context.toString();
   // const code = await minifyCss(context.toString());
-  await writeFile(file.replace('.css', '.min.css'), `/* ${new Date().toLocaleString()} */\n${code}`);
+  await writeFile(file.replace('.css', '.min.css'), code);
   const dir = dirname(file);
   const left = await buildStyle({ inputCss: code, dir, buildId: 'js', factory: styleFactory });
   const right = await buildStyle({ inputCss: code, dir, buildId: 'rs', factory: styleFactoryRust });

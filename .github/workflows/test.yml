@@ -5,11 +5,11 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-    types: [review_requested, ready_for_review]
 
 jobs:
   cargo-test:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
     env:
       CARGO_TERM_COLOR: always
       RUST_BACKTRACE: full
