@@ -5,25 +5,11 @@
     "access": "public"
   },
   "main": "index.js",
-  "module": "index.mjs",
   "types": "index.d.ts",
   "type": "commonjs",
   "repository": {
     "type": "git",
     "url": "https://github.com/napi-rust/style-factory.git"
-  },
-  "exports": {
-    ".": {
-      "import": {
-        "types": "./index.d.ts",
-        "default": "./index.mjs"
-      },
-      "require": {
-        "types": "./index.d.ts",
-        "default": "./index.js"
-      }
-    },
-    "./package.json": "./package.json"
   },
   "napi": {
     "name": "style-factory",

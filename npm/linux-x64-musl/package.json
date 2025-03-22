@@ -14,9 +14,9 @@
   "cpu": [
     "x64"
   ],
-  "main": "test-api.linux-x64-musl.node",
+  "main": "style-factory.linux-x64-musl.node",
   "files": [
-    "test-api.linux-x64-musl.node"
+    "style-factory.linux-x64-musl.node"
   ],
   "license": "MIT",
   "engines": {
