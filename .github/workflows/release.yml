@@ -19,24 +19,8 @@ permissions:
       - .editorconfig
       - docs/**
 jobs:
-  check-version:
-    runs-on: ubuntu-latest
-    outputs:
-      should_build: ${{ steps.check.outputs.should_build }}
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v4
-      - name: Check commit message
-        id: check
-        run: |
-          if [[ "${{ github.event.head_commit.message }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
-            echo "It's a release commit, will build and publish"
-          else
-            echo "It's not a release commit, will not build and publish"
-            exit 1
-          fi
-        shell: bash
   build:
+    if: contains(github.event.head_commit.message, 'release version')
     strategy:
       fail-fast: false
       matrix:
@@ -59,8 +43,6 @@ jobs:
             target: aarch64-apple-darwin
             build: yarn build --target aarch64-apple-darwin
     name: stable - ${{ matrix.settings.target }} - node@20
-    needs:
-      - check-version
     runs-on: ${{ matrix.settings.host }}
     steps:
       - uses: actions/checkout@v4
@@ -250,11 +232,11 @@ jobs:
       - name: Publish
         run: |
           npm config set provenance true
-          if git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$";
+          if git log -1 --pretty=%B | grep "^release";
           then
             echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
             npm publish --access public
-          elif git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+";
+          elif git log -1 --pretty=%B | grep "^pre-release";
           then
             echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
             npm publish --tag next --access public

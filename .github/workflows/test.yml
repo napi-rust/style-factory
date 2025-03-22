@@ -3,8 +3,18 @@ name: Test
 on:
   push:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'Cargo.toml'
+      - '__tests__/**'
+      - '__fixtures__/**'
   pull_request:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'Cargo.toml'
+      - '__tests__/**'
+      - '__fixtures__/**'
 
 jobs:
   cargo-test:

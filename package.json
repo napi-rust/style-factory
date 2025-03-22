@@ -1,6 +1,6 @@
 {
   "name": "@noyobo/style-factory",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publishConfig": {
     "access": "public"
   },
@@ -11,6 +11,10 @@
     "type": "git",
     "url": "https://github.com/napi-rust/style-factory.git"
   },
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ],
   "napi": {
     "name": "style-factory",
     "triples": {
