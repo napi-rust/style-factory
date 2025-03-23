@@ -6,6 +6,7 @@
 export interface JsCompileResult {
   css: string
   dependencies: Array<string>
+  imports: Record<string, Array<string>>
 }
 export declare function compileCSS(entry: string): JsCompileResult
 export declare function styleFactory(cssText: string): string

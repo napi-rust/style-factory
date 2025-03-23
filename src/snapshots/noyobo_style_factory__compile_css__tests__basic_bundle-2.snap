@@ -1,0 +1,5 @@
+---
+source: src/compile_css.rs
+expression: "format!(\"{}: {:?}\", key_str, values_str)"
+---
+a.css: ["b.css"]

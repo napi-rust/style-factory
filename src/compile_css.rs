@@ -1,17 +1,20 @@
 use crate::options::{get_parser_options, get_printer_options};
 use lightningcss::bundler::{Bundler, FileProvider, SourceProvider};
+use std::collections::HashMap;
 use std::error::Error;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 
 pub struct CompileResult {
   pub css: String,
-  pub dependencies: Vec<String>,
+  pub dependencies: Vec<PathBuf>,
+  pub imports: HashMap<PathBuf, Vec<PathBuf>>,
 }
 
 struct TrackingProvider {
   file_provider: FileProvider,
-  dependencies: Arc<Mutex<Vec<String>>>,
+  dependencies: Arc<Mutex<Vec<PathBuf>>>,
+  imports: Arc<RwLock<HashMap<PathBuf, Vec<PathBuf>>>>,
 }
 
 impl TrackingProvider {
@@ -19,6 +22,7 @@ impl TrackingProvider {
     TrackingProvider {
       file_provider: FileProvider::new(),
       dependencies: Arc::new(Mutex::new(Vec::new())),
+      imports: Arc::new(RwLock::new(HashMap::new())),
     }
   }
 }
@@ -28,16 +32,24 @@ impl SourceProvider for TrackingProvider {
 
   fn read(&self, path: &Path) -> Result<&str, Self::Error> {
     let result = self.file_provider.read(path)?;
-    self
-      .dependencies
-      .lock()
-      .unwrap()
-      .push(path.to_string_lossy().to_string());
+    self.dependencies.lock().unwrap().push(path.to_path_buf());
     Ok(result)
   }
 
   fn resolve(&self, specifier: &str, originating_file: &Path) -> Result<PathBuf, Self::Error> {
-    self.file_provider.resolve(specifier, originating_file)
+    let result: PathBuf = self.file_provider.resolve(specifier, originating_file)?;
+    let specifier_path = result.to_path_buf();
+    let originating_file_path = originating_file.to_path_buf();
+
+    let mut imports = self.imports.write().unwrap();
+    imports
+      .entry(originating_file_path.clone())
+      .and_modify(|values| {
+        values.push(specifier_path.clone());
+      })
+      .or_insert(vec![specifier_path.clone()]);
+
+    Ok(result)
   }
 }
 
@@ -46,17 +58,21 @@ pub fn compile_css(entry: &Path) -> Result<CompileResult, Box<dyn Error>> {
   let mut bundler = Bundler::new(&fs, None, get_parser_options());
   let stylesheet = bundler.bundle(entry).unwrap();
   let result = stylesheet.to_css(get_printer_options())?;
+
   let dependencies = fs.dependencies.lock().unwrap().clone();
+  let imports = fs.imports.read().unwrap().clone();
 
   Ok(CompileResult {
     css: result.code,
     dependencies,
+    imports,
   })
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::node_path::get_basename;
   use indoc::indoc;
   use insta::assert_snapshot;
   use std::fs;
@@ -99,16 +115,33 @@ mod tests {
     "#},
     )?;
 
-    let result: CompileResult = compile_css(css_path.as_path())?;
-    let dependencies = result.dependencies;
+    let return_compile_result: CompileResult = compile_css(css_path.as_path())?;
+    let return_dependencies = return_compile_result.dependencies;
 
-    assert_snapshot!(result.css);
-    assert_eq!(dependencies.len(), 3);
-    let dependencies_names: Vec<String> = dependencies
+    assert_snapshot!(return_compile_result.css);
+    assert_eq!(return_dependencies.len(), 3);
+    let dependencies_names: Vec<String> = return_dependencies
       .iter()
-      .map(|path| path.split('/').last().unwrap().to_string())
+      .map(|path| get_basename(path, true).unwrap())
       .collect();
     assert_eq!(dependencies_names, vec!["a.css", "b.css", "c.css"]);
+
+    let return_imports = return_compile_result.imports;
+
+    let mut keys: Vec<&PathBuf> = return_imports.keys().collect();
+    keys.sort();
+
+    for key in keys {
+      let key_str = key.to_string_lossy().to_string();
+      let values = return_imports.get(key).unwrap();
+      let values_str: Vec<String> = values
+        .iter()
+        .map(|v| get_basename(v, true).unwrap())
+        .collect();
+      let key_str = get_basename(key_str, true).unwrap();
+
+      assert_snapshot!(format!("{}: {:?}", key_str, values_str));
+    }
 
     Ok(())
   }
