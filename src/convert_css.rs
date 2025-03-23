@@ -345,7 +345,7 @@ mod tests {
     let input = "#abc .a:not(div.b:not(.c:not(.d))) .e::after {
             color: red;
         }"
-      .to_string();
+    .to_string();
     assert_snapshot!(convert_css(input).unwrap().css);
   }
 
@@ -429,7 +429,7 @@ mod tests {
         font-size: 1em;
       }
     "#}
-      .to_string();
+    .to_string();
     let result = convert_css(input.to_string());
     let result_unwrapped = result.unwrap();
     assert_snapshot!(result_unwrapped.css);
@@ -447,7 +447,7 @@ mod tests {
         font-size: 1em;
       }
     "#}
-      .to_string();
+    .to_string();
     let result = convert_css(input.to_string());
     let result_unwrapped = result.unwrap();
     assert_snapshot!(result_unwrapped.css);
@@ -484,7 +484,7 @@ mod tests {
       }
       "#
     }
-      .to_string();
+    .to_string();
 
     let result = convert_css(input.to_string());
     assert_snapshot!(result.unwrap().css);
@@ -500,7 +500,7 @@ mod tests {
         }
       }
     "#}
-      .to_string();
+    .to_string();
     let result = convert_css(input);
     match result {
       Ok(_) => panic!("Expected an error, but got Ok"),
@@ -517,7 +517,7 @@ mod tests {
       .a { color: red;}
       @import url('./b.css')
     "#
-      .to_string();
+    .to_string();
     let result = convert_css(input);
     match result {
       Ok(_) => panic!("Expected an error, but got Ok"),
