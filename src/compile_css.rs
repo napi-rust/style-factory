@@ -2,9 +2,11 @@ use crate::options::{get_parser_options, get_printer_options};
 use lightningcss::bundler::{Bundler, FileProvider, SourceProvider};
 use std::collections::HashMap;
 use std::error::Error;
+use std::io::{Error as IoError, ErrorKind};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, RwLock};
 
+#[derive(Debug)]
 pub struct CompileResult {
   pub css: String,
   pub dependencies: Vec<PathBuf>,
@@ -56,7 +58,10 @@ impl SourceProvider for TrackingProvider {
 pub fn compile_css(entry: &Path) -> Result<CompileResult, Box<dyn Error>> {
   let fs = TrackingProvider::new();
   let mut bundler = Bundler::new(&fs, None, get_parser_options());
-  let stylesheet = bundler.bundle(entry).unwrap();
+  let stylesheet = bundler.bundle(entry).map_err(|e| {
+    let error: IoError = IoError::new(ErrorKind::Other, format!("BundleErrorKind: {}", e));
+    Box::new(error)
+  })?;
   let result = stylesheet.to_css(get_printer_options())?;
 
   let dependencies = fs.dependencies.lock().unwrap().clone();
@@ -79,8 +84,8 @@ mod tests {
   use tempfile::tempdir;
 
   #[test]
-  fn test_basic_bundle() -> Result<(), Box<dyn Error>> {
-    let dir = tempdir()?;
+  fn test_basic_bundle() {
+    let dir = tempdir().unwrap();
     let css_path = dir.path().join("a.css");
 
     fs::write(
@@ -89,7 +94,8 @@ mod tests {
       @import "./b.css";
       .a { color: red; .a-child { color: blue; } }
     "#},
-    )?;
+    )
+    .unwrap();
 
     let png_data: &[u8] = &[
       0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44,
@@ -98,7 +104,7 @@ mod tests {
       0xFF, 0xFF, 0x3F, 0x00, 0x05, 0xFE, 0x02, 0xFE, 0xDC, 0xCC, 0x59, 0xE7, 0x00, 0x00, 0x00,
       0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
     ];
-    fs::write(dir.path().join("b.png"), png_data)?;
+    fs::write(dir.path().join("b.png"), png_data).unwrap();
 
     fs::write(
       dir.path().join("b.css"),
@@ -106,16 +112,18 @@ mod tests {
       @import "./c.css";
       .b { padding: 0; background: url("./b.png"); }
     "#},
-    )?;
+    )
+    .unwrap();
 
     fs::write(
       dir.path().join("c.css"),
       indoc! { r#"
       .c { padding: 0 }
     "#},
-    )?;
+    )
+    .unwrap();
 
-    let return_compile_result: CompileResult = compile_css(css_path.as_path())?;
+    let return_compile_result: CompileResult = compile_css(css_path.as_path()).unwrap();
     let return_dependencies = return_compile_result.dependencies;
 
     assert_snapshot!(return_compile_result.css);
@@ -142,7 +150,40 @@ mod tests {
 
       assert_snapshot!(format!("{}: {:?}", key_str, values_str));
     }
+  }
 
-    Ok(())
+  #[test]
+  fn test_bundle_err() {
+    let dir = tempdir().unwrap();
+    let css_path = dir.path().join("a.css");
+    fs::write(
+      &css_path,
+      indoc! { r#"
+      @import "https://example.com/b.css";
+        .a { color: red; .a-child { color: blue; } }
+      "# },
+    )
+    .unwrap();
+
+    let result = compile_css(css_path.as_path());
+
+    assert!(result.is_err());
+  }
+
+  #[test]
+  fn test_parse_err() {
+    let dir = tempdir().unwrap();
+    let css_path = dir.path().join("a.css");
+    fs::write(
+      &css_path,
+      indoc! { r#"
+        "a { color: red; } .a color: blue; height: 100px}"
+      "# },
+    )
+    .unwrap();
+
+    let result = compile_css(css_path.as_path());
+
+    assert!(result.is_err());
   }
 }
