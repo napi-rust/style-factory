@@ -5,6 +5,7 @@ use std::path::Path;
  * @param path: &str
  * @param with_extension: bool
  */
+#[allow(dead_code)]
 pub fn get_basename<P: AsRef<Path>>(path: P, with_extension: bool) -> Option<String> {
   let path = path.as_ref();
   if with_extension {
