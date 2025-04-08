@@ -1,0 +1,5 @@
+---
+source: src/js_compile_css.rs
+expression: result.css
+---
+p{color:#00f}body{color:red}
