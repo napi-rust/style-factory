@@ -2,6 +2,7 @@
 .foo {
   color: red;
   height: 100rpx;
+  backdrop-filter: blur(2px);
 }
 
 #id,

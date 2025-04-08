@@ -4,6 +4,8 @@
 } /* host-end */
 .sf-foo {
   color: red;
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
   height: 50px;
 }
 #id,
