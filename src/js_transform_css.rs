@@ -3,7 +3,7 @@ use napi_derive::napi;
 
 #[napi(object)]
 pub struct JSTransformCSSResult {
-  pub css: String,
+  pub code: String,
 }
 
 #[napi(object)]
@@ -27,7 +27,7 @@ pub fn js_transform_css(option: Option<JSTransformCssOptions>) -> Result<JSTrans
 
   // 调用 transform_css 函数
   match transform_css(options) {
-    Ok(css) => Ok(JSTransformCSSResult { css }),
+    Ok(css) => Ok(JSTransformCSSResult { code: css }),
     Err(err) => Err(napi::Error::from_reason(err.to_string())),
   }
 }
