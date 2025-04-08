@@ -12,7 +12,7 @@ export default function styleFactory(options) {
     prefix,
     'foo{color:red;height:',
     rpx(100) + 'px',
-    '}#',
+    ';backdrop-filter:blur(2px)}#',
     'id, .',
     prefix,
     'class{color:red}.',
