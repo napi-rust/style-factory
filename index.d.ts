@@ -11,10 +11,10 @@ export interface JsCompileResult {
 export declare function compileCSS(entry: string): JsCompileResult
 export declare function styleFactory(cssText: string): string
 export interface JsTransformCssResult {
-  css: string
+  code: string
 }
 export interface JsTransformCssOptions {
   input: string
-  minify: boolean
+  minify?: boolean
 }
 export declare function transformCSS(option?: JsTransformCssOptions | undefined | null): JsTransformCssResult
