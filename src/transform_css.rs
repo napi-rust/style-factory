@@ -1,21 +1,16 @@
 use crate::options::{get_minify_options, get_parser_options, get_printer_options};
 use lightningcss::stylesheet::{PrinterOptions, StyleSheet};
 use std::error::Error;
-use std::io::{Error as IoError, ErrorKind};
 
 #[derive(Debug)]
-pub struct TransformCssOptions {
-  pub input: String,
+pub struct TransformCssOptions<'a> {
+  pub input: &'a str,
   pub minify: bool,
 }
 
-pub fn transform_css(options: TransformCssOptions) -> Result<String, Box<dyn Error>> {
-  // 解析 CSS 文本
-  let mut stylesheet = StyleSheet::parse(&options.input, get_parser_options()).map_err(|e| {
-    // 处理解析错误
-    let error: IoError = IoError::new(ErrorKind::Other, format!("CSS parsing error:: {}", e));
-    Box::new(error)
-  })?;
+pub fn transform_css(options: TransformCssOptions) -> Result<String, Box<dyn Error + '_>> {
+  // 将 input 的所有权转移到 parse 方法中
+  let mut stylesheet = StyleSheet::parse(options.input, get_parser_options())?;
 
   stylesheet.minify(get_minify_options())?;
 
@@ -42,9 +37,7 @@ mod tests {
         backdrop-filter: blur(2px);
         background-image: url(//abc.ttt.com/abc?adfsd%3F=1231);
       }
-      "#}
-      .parse()
-      .unwrap(),
+      "#},
       minify: false,
     };
 
@@ -55,7 +48,7 @@ mod tests {
   #[test]
   fn test_transform_css_minify_false() {
     let options = TransformCssOptions {
-      input: "body { color: red; .a { color: blue } }".to_string(),
+      input: "body { color: red; .a { color: blue } }",
       minify: false,
     };
 
@@ -66,7 +59,7 @@ mod tests {
   #[test]
   fn test_transform_css_invalid_input() {
     let options = TransformCssOptions {
-      input: "invalid-css".to_string(),
+      input: "invalid-css",
       minify: true,
     };
 
@@ -80,7 +73,7 @@ mod tests {
   #[test]
   fn test_transform_css_empty_input() {
     let options = TransformCssOptions {
-      input: "".to_string(),
+      input: "",
       minify: true,
     };
 
@@ -91,7 +84,7 @@ mod tests {
   #[test]
   fn test_transform_css_complex_input() {
     let options = TransformCssOptions {
-      input: "h1 { font-size: 20px; } p { margin: 10px; }".to_string(),
+      input: "h1 { font-size: 20px; } p { margin: 10px; }",
       minify: true,
     };
 

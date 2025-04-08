@@ -66,7 +66,7 @@ describe('transformCSS', () => {
         minify: true,
       })
     } catch (e) {
-      expect(e).toMatchInlineSnapshot(`[Error: CSS parsing error:: Unexpected end of input at :7:9]`)
+      expect(e).toMatchInlineSnapshot(`[Error: Unexpected end of input at :7:9]`)
     }
   });
 
@@ -83,7 +83,7 @@ describe('transformCSS', () => {
         minify: true,
       })
     } catch (e) {
-      expect(e).toMatchInlineSnapshot(`[Error: CSS parsing error:: @import rules must precede all rules aside from @charset and @layer statements at :5:16]`)
+      expect(e).toMatchInlineSnapshot(`[Error: @import rules must precede all rules aside from @charset and @layer statements at :5:16]`)
     }
   });
 })

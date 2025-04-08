@@ -12,22 +12,28 @@ pub struct JSTransformCssOptions {
   pub minify: Option<bool>,
 }
 
-#[napi(js_name = "transformCSS")]
-pub fn js_transform_css(option: Option<JSTransformCssOptions>) -> Result<JSTransformCSSResult, napi::Error> {
-  let options = option.map_or_else(
-    || TransformCssOptions {
-      input: "".to_string(),
-      minify: false,
-    },
-    |opt| TransformCssOptions {
-      input: opt.input,
-      minify: opt.minify.unwrap_or(false),
-    },
-  );
-
-  // 调用 transform_css 函数
-  match transform_css(options) {
-    Ok(css) => Ok(JSTransformCSSResult { code: css }),
-    Err(err) => Err(napi::Error::from_reason(err.to_string())),
+impl Default for JSTransformCssOptions {
+  fn default() -> Self {
+    JSTransformCssOptions {
+      input: String::new(),
+      minify: None,
+    }
   }
+}
+
+#[napi(js_name = "transformCSS")]
+pub fn js_transform_css(
+  option: Option<JSTransformCssOptions>,
+) -> Result<JSTransformCSSResult, napi::Error> {
+  let option = option.unwrap_or_default();
+  let minify = option.minify.unwrap_or(false);
+  let input = option.input;
+
+  let result = transform_css(TransformCssOptions {
+    input: &input,
+    minify,
+  })
+  .map_err(|e| napi::Error::new(napi::Status::GenericFailure, e.to_string()))?;
+
+  Ok(JSTransformCSSResult { code: result })
 }
