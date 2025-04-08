@@ -10,6 +10,9 @@ mod js_compile_css;
 mod node_path;
 mod options;
 mod style_factory;
+mod transform_css;
+mod js_transform_css;
 
 pub use js_compile_css::js_compile_css;
+pub use js_transform_css::js_transform_css;
 pub use style_factory::style_factory;

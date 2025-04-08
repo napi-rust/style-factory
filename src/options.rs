@@ -4,7 +4,7 @@ use lightningcss::targets::{Browsers, Targets};
 
 pub fn get_targets<'t>() -> Targets {
   Targets::from(Browsers {
-    safari: Some(13 << 16),
+    safari: Some(11 << 16),
     chrome: Some(55 << 16),
     ..Browsers::default()
   })
