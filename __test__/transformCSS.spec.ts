@@ -19,7 +19,7 @@ describe('transformCSS', () => {
 
     expect(result).toMatchInlineSnapshot(`
       {
-        "css": "@import "b.css";
+        "code": "@import "b.css";
 
       .c {
         color: green;
@@ -47,7 +47,7 @@ describe('transformCSS', () => {
 
     expect(result).toMatchInlineSnapshot(`
       {
-        "css": "@import "b.css";.c{color:green;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);background-image:url(//abc.ttt.com/abc?adfsd%3F=1231)}",
+        "code": "@import "b.css";.c{color:green;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);background-image:url(//abc.ttt.com/abc?adfsd%3F=1231)}",
       }
     `)
   })
