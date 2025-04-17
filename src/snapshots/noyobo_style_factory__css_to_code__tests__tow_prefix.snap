@@ -8,7 +8,7 @@ export default function styleFactory(options) {
   var rpx = options.rpx;
   var host = options.host || 'host-placeholder';
   var css = ["." , prefix , "a{width:" , rpx(100) , "px}." , prefix , "b{height:" , rpx(50) , "px}", ""].join("");
-  var hostStyleText = ["[is=" , host , "]{color:#000;width:" , rpx(100) , "px;height:" , rpx(20) , "px}", ""].join("");
+  var hostStyleText = ["[is='" , host , "']{color:#000;width:" , rpx(100) , "px;height:" , rpx(20) , "px}", ""].join("");
 if (options.hostStyle) {
     options.hostStyle(hostStyleText);
 } else {
