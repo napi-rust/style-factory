@@ -310,8 +310,8 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { compileCSS, styleFactory, transformCSS } = nativeBinding
+const { compileCSS, transformCSS, styleFactory } = nativeBinding
 
 module.exports.compileCSS = compileCSS
-module.exports.styleFactory = styleFactory
 module.exports.transformCSS = transformCSS
+module.exports.styleFactory = styleFactory

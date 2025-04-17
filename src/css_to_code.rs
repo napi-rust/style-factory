@@ -51,7 +51,7 @@ fn process_text(text: &str, imports: Option<&Mutex<HashMap<String, String>>>) ->
     .replace_all(&result, r#"" , prefix , ""#)
     .into_owned();
   result = HOST_REGEX
-    .replace_all(&result, r#"" , host , ""#)
+    .replace_all(&result, r#"'" , host , "'"#)
     .into_owned();
   result = RPX_REGEX
     .replace_all(&result, |caps: &Captures<'_>| {

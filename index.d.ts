@@ -9,7 +9,6 @@ export interface JsCompileResult {
   imports: Record<string, Array<string>>
 }
 export declare function compileCSS(entry: string): JsCompileResult
-export declare function styleFactory(cssText: string): string
 export interface JsTransformCssResult {
   code: string
 }
@@ -18,3 +17,4 @@ export interface JsTransformCssOptions {
   minify?: boolean
 }
 export declare function transformCSS(option?: JsTransformCssOptions | undefined | null): JsTransformCssResult
+export declare function styleFactory(cssText: string): string

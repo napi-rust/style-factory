@@ -1,5 +1,5 @@
 ---
 source: src/compile_css.rs
-expression: result.code
+expression: return_compile_result.css
 ---
 .c{padding:0}.b{padding:0;background:url(./b.png)}.a{color:red}.a .a-child{color:#00f}

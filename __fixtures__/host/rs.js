@@ -10,17 +10,17 @@ export default function styleFactory(options) {
   var css = [
     '.',
     prefix,
-    'a [is=',
+    "a [is='",
     host,
-    ']{height:',
+    "']{height:",
     rpx(100),
     'px}',
     '',
   ].join('');
   var hostStyleText = [
-    '[is=',
+    "[is='",
     host,
-    ']{color:red;width:',
+    "']{color:red;width:",
     rpx(100),
     'px;font-size:10px}',
     '',
