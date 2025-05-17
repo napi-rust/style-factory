@@ -163,7 +163,9 @@ impl<'i> Visitor<'i> for FactoryVisitor {
             let mut buf = SmallVec::<[u8; 64]>::new();
             buf.extend_from_slice(PREFIX.as_bytes());
             buf.extend_from_slice(class.as_bytes());
-            *class = String::from_utf8(buf.to_vec()).unwrap().into();
+            *class = String::from_utf8(buf.to_vec())
+              .expect("Failed to convert to UTF-8: ensure PREFIX and class contain valid ASCII")
+              .into();
           }
           Component::ExplicitUniversalType => {
             *component = Component::LocalName(LocalName {
