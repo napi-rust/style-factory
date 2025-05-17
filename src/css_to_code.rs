@@ -1,8 +1,10 @@
+use std::collections::HashMap;
+
 use indoc::formatdoc;
 use lazy_regex::{lazy_regex, regex::Captures, Regex};
 use md5::{Digest, Md5};
 use once_cell::sync::Lazy;
-use std::collections::HashMap;
+use serde_json;
 
 #[derive(Debug, Clone)]
 pub struct Css2CodeOptions<'a> {
@@ -22,28 +24,32 @@ pub fn css_to_code(options: Css2CodeOptions<'_>) -> String {
 
 /// 处理文本，替换自定义标记和处理 import
 fn process_text(text: &str, imports: &mut HashMap<String, String>) -> String {
-  let mut result = json_escape(text);
+  let escaped = json_escape(text);
 
-  result = PREFIX_REGEX
-    .replace_all(&result, r#"" , prefix , ""#)
+  let with_prefix = PREFIX_REGEX
+    .replace_all(&escaped, r#"" , prefix , ""#)
     .into_owned();
-  result = HOST_REGEX
-    .replace_all(&result, r#"'" , host , "'"#)
+
+  let with_host = HOST_REGEX
+    .replace_all(&with_prefix, r#"'" , host , "'"#)
     .into_owned();
-  result = RPX_REGEX
-    .replace_all(&result, |caps: &Captures<'_>| {
+
+  let with_rpx = RPX_REGEX
+    .replace_all(&with_host, |caps: &Captures<'_>| {
       format!(r#"" , rpx({}) , "px"#, &caps[1])
     })
     .into_owned();
-  result = IMPORT_REGEX
-    .replace_all(&result, |caps: &Captures<'_>| {
+
+  let with_imports = IMPORT_REGEX
+    .replace_all(&with_rpx, |caps: &Captures<'_>| {
       let url = &caps[1];
       let fn_name = format!("I_{}", md5_hash(url));
       imports.insert(url.to_string(), fn_name.clone());
       format!(r#"" , {}(options) , ""#, fn_name)
     })
     .into_owned();
-  result
+
+  with_imports
 }
 
 fn md5_hash(input: &str) -> String {
@@ -53,9 +59,10 @@ fn md5_hash(input: &str) -> String {
 }
 
 fn json_escape(s: &str) -> String {
-  s.replace('\\', r"\\")
-    .replace('"', r#"\""#)
-    .replace('\n', r"\n")
+  serde_json::to_string(s)
+    .unwrap()
+    .trim_matches('"')
+    .to_string()
 }
 
 static PREFIX_REGEX: Lazy<Regex> = lazy_regex!(r"__PREFIX__");
@@ -159,6 +166,27 @@ mod tests {
     };
     let output = css_to_code(options);
 
+    assert_snapshot!(output.trim());
+  }
+
+  #[test]
+  fn test_empty_css() {
+    let options = Css2CodeOptions {
+      css: "",
+      host_css: None,
+    };
+    let output = css_to_code(options);
+    assert_snapshot!(output.trim());
+  }
+
+  #[test]
+  fn test_special_chars() {
+    let css = r#".foo{content:"a\"b\\c\nd"}"#;
+    let options = Css2CodeOptions {
+      css,
+      host_css: None,
+    };
+    let output = css_to_code(options);
     assert_snapshot!(output.trim());
   }
 }
