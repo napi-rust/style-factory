@@ -35,15 +35,15 @@ impl SourceProvider for TrackingProvider {
 
   fn read(&self, path: &Path) -> Result<&str, Self::Error> {
     let result = self.file_provider.read(path)?;
-    self.dependencies.lock().unwrap().insert(path.to_path_buf());
+    self.dependencies.lock().unwrap().insert(path.into());
     Ok(result)
   }
 
   fn resolve(&self, specifier: &str, originating_file: &Path) -> Result<PathBuf, Self::Error> {
-    let result: PathBuf = self.file_provider.resolve(specifier, originating_file)?;
+    let result = self.file_provider.resolve(specifier, originating_file)?;
     let mut imports = self.imports.write().unwrap();
     imports
-      .entry(originating_file.to_path_buf())
+      .entry(originating_file.into())
       .or_default()
       .push(result.clone());
     Ok(result)
