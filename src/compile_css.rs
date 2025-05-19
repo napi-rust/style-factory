@@ -1,10 +1,11 @@
 use crate::options::{get_parser_options, get_printer_options};
+use indexmap::IndexSet;
 use lightningcss::bundler::{Bundler, FileProvider, SourceProvider};
 use std::collections::HashMap;
 use std::error::Error;
 use std::io::{Error as IoError, ErrorKind};
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex, RwLock}; // 新增
 
 #[derive(Debug)]
 pub struct CompileResult {
@@ -15,7 +16,7 @@ pub struct CompileResult {
 
 struct TrackingProvider {
   file_provider: FileProvider,
-  dependencies: Arc<Mutex<Vec<PathBuf>>>,
+  dependencies: Arc<Mutex<IndexSet<PathBuf>>>, // 保证顺序
   imports: Arc<RwLock<HashMap<PathBuf, Vec<PathBuf>>>>,
 }
 
@@ -23,7 +24,7 @@ impl TrackingProvider {
   pub fn new() -> Self {
     TrackingProvider {
       file_provider: FileProvider::new(),
-      dependencies: Arc::new(Mutex::new(Vec::new())),
+      dependencies: Arc::new(Mutex::new(IndexSet::new())),
       imports: Arc::new(RwLock::new(HashMap::new())),
     }
   }
@@ -34,23 +35,17 @@ impl SourceProvider for TrackingProvider {
 
   fn read(&self, path: &Path) -> Result<&str, Self::Error> {
     let result = self.file_provider.read(path)?;
-    self.dependencies.lock().unwrap().push(path.to_path_buf());
+    self.dependencies.lock().unwrap().insert(path.into());
     Ok(result)
   }
 
   fn resolve(&self, specifier: &str, originating_file: &Path) -> Result<PathBuf, Self::Error> {
-    let result: PathBuf = self.file_provider.resolve(specifier, originating_file)?;
-    let specifier_path = result.to_path_buf();
-    let originating_file_path = originating_file.to_path_buf();
-
+    let result = self.file_provider.resolve(specifier, originating_file)?;
     let mut imports = self.imports.write().unwrap();
     imports
-      .entry(originating_file_path.clone())
-      .and_modify(|values| {
-        values.push(specifier_path.clone());
-      })
-      .or_insert(vec![specifier_path.clone()]);
-
+      .entry(originating_file.into())
+      .or_default()
+      .push(result.clone());
     Ok(result)
   }
 }
@@ -64,7 +59,7 @@ pub fn compile_css(entry: &Path) -> Result<CompileResult, Box<dyn Error>> {
   })?;
   let result = stylesheet.to_css(get_printer_options())?;
 
-  let dependencies = fs.dependencies.lock().unwrap().clone();
+  let dependencies = fs.dependencies.lock().unwrap().iter().cloned().collect(); // 顺序稳定
   let imports = fs.imports.read().unwrap().clone();
 
   Ok(CompileResult {

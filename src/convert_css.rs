@@ -17,7 +17,6 @@ use smallvec::SmallVec;
 use std::error::Error;
 use std::string::String;
 
-// Define constants for magic strings
 const PREFIX: &str = "__PREFIX__";
 const HOST: &str = "__HOST__";
 const RPX_FUNC: &str = "__RPX__";
@@ -28,11 +27,12 @@ const UNSUPPORTED_WEB_VIEW: &str = "unsupported-web-view";
 
 struct FactoryVisitor {
   types: VisitTypes,
-  host_css_vec: Vec<String>,
+  host_css_vec: SmallVec<[String; 2]>,
 }
 
 impl FactoryVisitor {
-  fn replace_rpx_token(&self, token: &mut Token) {
+  #[inline]
+  fn replace_rpx_token(token: &mut Token) {
     if let Token::Dimension {
       ref mut value,
       unit,
@@ -41,56 +41,56 @@ impl FactoryVisitor {
     {
       if unit == &"rpx" {
         // 把当前 token 替换成  RPX_FUNC(value) 的形式
-        *token = Token::String(format!("{}({})", RPX_FUNC, value).into());
+        *token = Token::String(format!("{RPX_FUNC}({})", value).into());
       }
     }
   }
 
-  fn is_host_selector(&self, selector: &Selector) -> bool {
+  #[inline]
+  fn is_host_selector(selector: &Selector) -> bool {
     if selector.iter().selector_length() != 1 {
       return false;
     }
-    // 判断是否是 :host 选择器
     selector.iter().any(|component| {
-      if let Component::AttributeInNoNamespace {
-        local_name,
-        operator,
-        value,
-        ..
-      } = component
-      {
-        return local_name == &Ident::from("is")
-          && operator == &AttrSelectorOperator::Equal
-          && value == &CSSString::from(HOST);
-      }
-      false
+      matches!(
+          component,
+          Component::AttributeInNoNamespace {
+              local_name,
+              operator,
+              value,
+              ..
+          } if local_name == &Ident::from("is")
+              && operator == &AttrSelectorOperator::Equal
+              && value == &CSSString::from(HOST)
+      )
     })
   }
 
-  fn has_single_selector(&self, selectors: &SelectorList) -> bool {
-    // 判断列表里是否有单个 :host 选择器
-    selectors.0.iter().any(|selector| {
-      return self.is_host_selector(selector);
-    })
+  #[inline]
+  fn has_single_selector(selectors: &SelectorList) -> bool {
+    selectors.0.iter().any(Self::is_host_selector)
   }
 
-  fn remove_single_selector<'i>(&self, selectors: &SelectorList<'i>) -> SelectorList<'i> {
-    // 移除列表里的单个 :host 选择器
+  /// 返回过滤掉所有 host selector 的 SelectorList，避免 clone 整个列表
+  #[inline]
+  fn filter_non_host<'i>(selectors: &SelectorList<'i>) -> SelectorList<'i> {
     SelectorList::new(
       selectors
         .0
         .iter()
+        .filter(|s| !Self::is_host_selector(s))
         .cloned()
-        .filter(|selector| !self.is_host_selector(selector))
         .collect(),
     )
   }
 
-  fn create_host_selector<'s>(&self) -> Selector<'s> {
-    Selector::from(vec![self.create_host_component()])
+  #[inline]
+  fn create_host_selector<'s>() -> Selector<'s> {
+    Selector::from(vec![Self::create_host_component()])
   }
 
-  fn create_host_component<'c>(&self) -> Component<'c> {
+  #[inline]
+  fn create_host_component<'c>() -> Component<'c> {
     Component::AttributeInNoNamespace {
       local_name: Ident::from("is"),
       operator: AttrSelectorOperator::Equal,
@@ -110,9 +110,9 @@ impl<'i> Visitor<'i> for FactoryVisitor {
 
   fn visit_rule<'a>(&mut self, rule: &'a mut CssRule<'i>) -> Result<(), Self::Error> {
     match rule {
-      CssRule::Import(ref import_rule) => {
+      CssRule::Import(import_rule) => {
         // @import url('./a.css'); => @import-style ("./a.css")
-        let new_rule = CssRule::Unknown(UnknownAtRule {
+        *rule = CssRule::Unknown(UnknownAtRule {
           name: IMPORT_STYLE.into(),
           prelude: TokenList(vec![
             TokenOrValue::Token(Token::ParenthesisBlock),
@@ -122,41 +122,32 @@ impl<'i> Visitor<'i> for FactoryVisitor {
           block: None,
           loc: import_rule.loc,
         });
-        *rule = new_rule;
       }
       _ => {
         rule.visit_children(self)?;
       }
     }
-
     // rule_exit 时，处理一些特殊的选择器
     if let CssRule::Style(style) = rule {
-      let selectors: &mut SelectorList<'i> = &mut style.selectors;
-      let has_single_host = self.has_single_selector(selectors);
-
+      let has_single_host = Self::has_single_selector(&style.selectors);
       if has_single_host {
-        let cloned_selectors = selectors.clone();
-        let omit_single_selectors: SelectorList = self.remove_single_selector(&cloned_selectors);
-
+        let omit_single_selectors = Self::filter_non_host(&style.selectors);
         // 移除后，如果没有选择器了，则将当前 rule 设置为 Ignored
         // 并将 host_css 添加到 host_css_vec 中
-        if omit_single_selectors.0.len() == 0 {
-          let cloned_rule = rule.clone();
-          let host_css = cloned_rule.to_css_string(get_printer_options()).unwrap();
-
+        if omit_single_selectors.0.is_empty() {
+          let host_css = rule.clone().to_css_string(get_printer_options())?;
           self.host_css_vec.push(host_css);
           *rule = CssRule::Ignored;
         } else {
-          // 复制原来选择器的样式, 生成一个新的 rule
-          style.selectors = omit_single_selectors;
+          // 原 style 仅保留非 host selector，新 style 仅保留 host selector
           let mut clone_style = style.clone();
+          style.selectors = omit_single_selectors;
           let mut single_selectors = SelectorList::new(SmallVec::new());
-          single_selectors.0.push(self.create_host_selector());
+          single_selectors.0.push(Self::create_host_selector());
           clone_style.selectors = single_selectors;
-
           self
             .host_css_vec
-            .push(clone_style.to_css_string(get_printer_options()).unwrap());
+            .push(clone_style.to_css_string(get_printer_options())?);
         }
       }
     }
@@ -164,28 +155,27 @@ impl<'i> Visitor<'i> for FactoryVisitor {
   }
 
   fn visit_selector(&mut self, selector: &mut Selector<'i>) -> Result<(), Self::Error> {
-    // 修改 selector 的样式名, 添加一个 PREFIX 前缀
     if self.types.contains(VisitTypes::SELECTORS) {
       for component in &mut selector.iter_mut_raw_match_order() {
         match component {
-          // 将类名替换成 PREFIX 类名
           Component::Class(class) => {
-            *class = format!("{}{}", PREFIX, class).into();
+            // 避免多余分配
+            let mut buf = SmallVec::<[u8; 64]>::new();
+            buf.extend_from_slice(PREFIX.as_bytes());
+            buf.extend_from_slice(class.as_bytes());
+            *class = String::from_utf8(buf.to_vec())
+              .expect("Failed to convert to UTF-8: ensure PREFIX and class contain valid ASCII")
+              .into();
           }
-
-          // 处理 * 选择器 * => unsupported-star
           Component::ExplicitUniversalType => {
             *component = Component::LocalName(LocalName {
               name: UNSUPPORTED_STAR.into(),
               lower_name: UNSUPPORTED_STAR.into(),
             });
           }
-
-          // 处理 :host 选择器 :host => [is=HOST]
-          Component::Host(_host) => {
-            *component = self.create_host_component();
+          Component::Host(_) => {
+            *component = Self::create_host_component();
           }
-
           // 将标签替换成 attribute 属性选择符  div => [meta:tag=div]
           Component::LocalName(local_name) => {
             // 如果是 web-view 标签, 则修改成 unsupported-web-view
@@ -213,7 +203,6 @@ impl<'i> Visitor<'i> for FactoryVisitor {
               self.visit_selector(sub_selector)?;
             }
           }
-
           _ => {
             // 其他选择器不做处理
           }
@@ -222,7 +211,6 @@ impl<'i> Visitor<'i> for FactoryVisitor {
     } else {
       selector.visit_children(self)?;
     }
-
     Ok(())
   }
 
@@ -230,19 +218,16 @@ impl<'i> Visitor<'i> for FactoryVisitor {
     match token {
       TokenOrValue::Token(token) => {
         if let Token::Dimension { .. } = token {
-          self.replace_rpx_token(token);
+          Self::replace_rpx_token(token);
         }
       }
       TokenOrValue::Function(function) => {
         function.arguments.visit_children(self)?;
       }
-      TokenOrValue::Var(ref mut var) => {
+      TokenOrValue::Var(var) => {
         var.fallback.visit_children(self)?;
       }
-      _ => {
-        // 其他 token 不做处理
-        // println!("token: {:?}", token);
-      }
+      _ => {}
     }
     Ok(())
   }
@@ -257,7 +242,7 @@ pub struct ConvertResult {
 pub fn convert_css(css: String) -> Result<ConvertResult, Box<dyn Error>> {
   if css.is_empty() {
     return Ok(ConvertResult {
-      css: "".to_string(),
+      css: String::new(),
       host_css: None,
     });
   }
@@ -268,51 +253,35 @@ pub fn convert_css(css: String) -> Result<ConvertResult, Box<dyn Error>> {
 
   let mut visitor = FactoryVisitor {
     types: VisitTypes::all(),
-    host_css_vec: Vec::new(),
+    host_css_vec: SmallVec::new(),
   };
-
-  // 2. 遍历规则（处理访问错误）
-  stylesheet
-    .visit(&mut visitor)
-    .map_err(|e| format!("Visit error: {}", e))?;
-
-  stylesheet
-    .minify(get_minify_options())
-    .map_err(|e| format!("Minify error: {}", e))?;
-
-  // 3. 生成 CSS（处理序列化错误）
-  let res = stylesheet
-    .to_css(get_printer_options())
-    .map_err(|e| format!("Serialize error: {}", e))?;
-
+  stylesheet.visit(&mut visitor)?;
+  stylesheet.minify(get_minify_options())?;
+  let res = stylesheet.to_css(get_printer_options())?;
   let host_css_string = process_host_css(&visitor.host_css_vec)?;
-
-  // 4. 返回成功结果
   Ok(ConvertResult {
     css: res.code,
     host_css: host_css_string,
   })
 }
 
-// Extract host CSS processing into a separate function
 fn process_host_css(host_css_vec: &[String]) -> Result<Option<String>, Box<dyn Error>> {
   if host_css_vec.is_empty() {
     return Ok(None);
   }
-
-  let host_css_css = host_css_vec.join("\n");
-
-  let mut host_stylesheet = StyleSheet::parse(&host_css_css, get_parser_options())
-    .map_err(|e| format!("Parse host error: {}", e))?;
-
-  host_stylesheet
-    .minify(get_minify_options())
-    .map_err(|e| format!("Minify host error: {}", e))?;
-
-  let host_css_css = host_stylesheet
-    .to_css(get_printer_options())
-    .map_err(|e| format!("Serialize host error: {}", e))?;
-
+  // 预估分配，提升效率
+  let total_len: usize = host_css_vec.iter().map(|s| s.len() + 1).sum();
+  let mut joined = String::with_capacity(total_len);
+  for (i, css) in host_css_vec.iter().enumerate() {
+    if i > 0 {
+      joined.push('\n');
+    }
+    joined.push_str(css);
+  }
+  let mut host_stylesheet =
+    StyleSheet::parse(&joined, get_parser_options()).map_err(|e| format!("Parse error: {}", e))?;
+  host_stylesheet.minify(get_minify_options())?;
+  let host_css_css = host_stylesheet.to_css(get_printer_options())?;
   Ok(Some(host_css_css.code))
 }
 
